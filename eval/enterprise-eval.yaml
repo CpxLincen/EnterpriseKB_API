@@ -1,0 +1,446 @@
+# 企业知识库综合评测集（多文档 / 多文档类型 / 多难度）
+#
+# 知识库 enterprise 包含 4 份文档、3 种类型：
+#   employee-handbook.md  (Markdown，人事)
+#   finance-policy.md     (Markdown，财务)
+#   travel-policy.txt     (TXT，差旅)
+#   it-policy.pdf         (PDF，IT 与办公设备)
+#
+# 字段说明：
+#   knowledge_base      该题使用的知识库（可覆盖顶层默认值）
+#   category            factual=事实型 / negative=无依据型
+#   difficulty          L1=原文直问 / L2=同义改写 / L3=推理·档位边界·精确词面
+#   expected_sources    预期命中的来源文件名
+#   expected_facts      回答必须包含的关键事实（子串匹配，已忽略空白/大小写）
+#   expected_chunk      答案所在正确块的特征子串（用于块级命中与 hit@k/MRR）
+#   reference_answer    参考答案（供 --judge 语义判分）
+#   expect_no_answer    true 表示该题知识库无依据，应被拒答
+name: enterprise-eval-v1
+knowledge_base: enterprise
+cases:
+  # ============ 人事（employee-handbook.md，Markdown）============
+  - id: hr-001
+    category: factual
+    difficulty: L1
+    question: 员工累计工作满 8 年，每年能享受几天带薪年假？
+    expected_sources: [employee-handbook.md]
+    expected_facts: ["5天"]
+    expected_chunk: 享受5天带薪年休假
+    reference_answer: 5 天带薪年休假。
+
+  - id: hr-002
+    category: factual
+    difficulty: L1
+    question: 员工累计工作满 15 年，带薪年假是多少天？
+    expected_sources: [employee-handbook.md]
+    expected_facts: ["10天"]
+    expected_chunk: 满10年不满20年的，享受10天
+    reference_answer: 10 天带薪年休假。
+
+  - id: hr-003
+    category: factual
+    difficulty: L1
+    question: 请假需要提前多久提交申请？
+    expected_sources: [employee-handbook.md]
+    expected_facts: ["一个工作日"]
+    expected_chunk: 至少提前一个工作日
+    reference_answer: 至少提前一个工作日提交申请。
+
+  - id: hr-004
+    category: factual
+    difficulty: L1
+    question: 遇到紧急情况无法提前请假时应该怎么做？
+    expected_sources: [employee-handbook.md]
+    expected_facts: ["电话", "补交"]
+    expected_chunk: 紧急情况可先电话告知主管
+    reference_answer: 先电话告知主管，并在恢复工作后补交申请。
+
+  - id: hr-101
+    category: factual
+    difficulty: L2
+    question: 我累计工作满 12 年了，今年能休几天带薪年假？
+    expected_sources: [employee-handbook.md]
+    expected_facts: ["10天"]
+    expected_chunk: 满10年不满20年的，享受10天
+    reference_answer: 10 天带薪年休假。
+
+  - id: hr-102
+    category: factual
+    difficulty: L2
+    question: 想请年假的话，需要预留多长时间提交申请？
+    expected_sources: [employee-handbook.md]
+    expected_facts: ["一个工作日"]
+    expected_chunk: 至少提前一个工作日
+    reference_answer: 至少提前一个工作日。
+
+  - id: hr-103
+    category: factual
+    difficulty: L2
+    question: 突然生病没办法提前请假，公司规定怎么处理？
+    expected_sources: [employee-handbook.md]
+    expected_facts: ["电话", "补交"]
+    expected_chunk: 紧急情况可先电话告知主管
+    reference_answer: 先电话告知主管，并在恢复工作后补交申请。
+
+  - id: hr-104
+    category: factual
+    difficulty: L3
+    question: 员工累计工作满 20 年，带薪年假是多少天？
+    expected_sources: [employee-handbook.md]
+    expected_facts: ["15天"]
+    expected_chunk: 满20年的，享受15天
+    reference_answer: 15 天带薪年休假。
+
+  - id: hr-105
+    category: factual
+    difficulty: L3
+    question: 累计工作满 10 年但不满 20 年的员工，年假标准是什么？
+    expected_sources: [employee-handbook.md]
+    expected_facts: ["10天"]
+    expected_chunk: 满10年不满20年的，享受10天
+    reference_answer: 10 天带薪年休假。
+
+  - id: hr-106
+    category: factual
+    difficulty: L1
+    question: 标准工作时间的起止是几点？
+    expected_sources: [employee-handbook.md]
+    expected_facts: ["9:00"]
+    expected_chunk: 9:00-18:00
+    reference_answer: 周一至周五 9:00-18:00。
+
+  - id: hr-107
+    category: factual
+    difficulty: L1
+    question: 婚假有多少天？
+    expected_sources: [employee-handbook.md]
+    expected_facts: ["3天"]
+    expected_chunk: 婚假3天
+    reference_answer: 3 天。
+
+  - id: hr-108
+    category: factual
+    difficulty: L2
+    question: 正式员工离职需要提前多久书面通知公司？
+    expected_sources: [employee-handbook.md]
+    expected_facts: ["30天"]
+    expected_chunk: 提前30天书面通知
+    reference_answer: 30 天。
+
+  - id: hr-109
+    category: factual
+    difficulty: L3
+    question: 连续病假超过多少天需要提供二级以上医院证明？
+    expected_sources: [employee-handbook.md]
+    expected_facts: ["二级以上医院"]
+    expected_chunk: 连续病假超过3天的
+    reference_answer: 3 天，须提供二级以上医院证明。
+
+  # ============ 财务（finance-policy.md，Markdown）============
+  - id: fin-001
+    category: factual
+    difficulty: L1
+    question: 一线城市住宿费报销上限是多少？
+    expected_sources: [finance-policy.md]
+    expected_facts: ["600元"]
+    expected_chunk: 上限600元/晚
+    reference_answer: 600 元/晚。
+
+  - id: fin-002
+    category: factual
+    difficulty: L1
+    question: 费用发生后多少天内需要提交报销？
+    expected_sources: [finance-policy.md]
+    expected_facts: ["30日"]
+    expected_chunk: 30日内提交报销
+    reference_answer: 30 日内。
+
+  - id: fin-003
+    category: factual
+    difficulty: L1
+    question: 单笔采购 5000 元以下由谁审批？
+    expected_sources: [finance-policy.md]
+    expected_facts: ["部门经理"]
+    expected_chunk: 5000元以下的采购由部门经理审批
+    reference_answer: 部门经理审批。
+
+  - id: fin-004
+    category: factual
+    difficulty: L1
+    question: 出差借款需要在多长时间内核销？
+    expected_sources: [finance-policy.md]
+    expected_facts: ["15个工作日"]
+    expected_chunk: 15个工作日内报销核销
+    reference_answer: 15 个工作日内报销核销。
+
+  - id: fin-101
+    category: factual
+    difficulty: L2
+    question: 去广州出差，住宿每晚最多能报销多少？
+    expected_sources: [finance-policy.md]
+    expected_facts: ["600元"]
+    expected_chunk: 上限600元/晚
+    reference_answer: 600 元/晚。
+
+  - id: fin-102
+    category: factual
+    difficulty: L2
+    question: 报销审批通过后，钱多久能打到工资卡？
+    expected_sources: [finance-policy.md]
+    expected_facts: ["5个工作日"]
+    expected_chunk: 5个工作日内打款
+    reference_answer: 5 个工作日内。
+
+  - id: fin-103
+    category: factual
+    difficulty: L3
+    question: 单笔采购 6 万元需要谁审批？
+    expected_sources: [finance-policy.md]
+    expected_facts: ["总经理"]
+    expected_chunk: 5万元（含）以上的采购由总经理审批
+    reference_answer: 总经理审批。
+
+  - id: fin-104
+    category: factual
+    difficulty: L2
+    question: 业务招待每人每次的报销标准是多少？
+    expected_sources: [finance-policy.md]
+    expected_facts: ["300元"]
+    expected_chunk: 人均不超过300元
+    reference_answer: 人均不超过 300 元。
+
+  - id: fin-105
+    category: factual
+    difficulty: L3
+    question: 单笔采购 3 万元由谁审批？
+    expected_sources: [finance-policy.md]
+    expected_facts: ["分管副总"]
+    expected_chunk: 5000元（含）至5万元的采购由分管副总审批
+    reference_answer: 分管副总审批。
+
+  - id: fin-106
+    category: factual
+    difficulty: L3
+    question: 一次业务招待总花费 2500 元，需要谁审批？
+    expected_sources: [finance-policy.md]
+    expected_facts: ["分管副总"]
+    expected_chunk: 总额超过2000元的，须报分管副总审批
+    reference_answer: 分管副总审批。
+
+  - id: fin-107
+    category: factual
+    difficulty: L2
+    question: 出租车单次报销的上限是多少？
+    expected_sources: [finance-policy.md]
+    expected_facts: ["80元"]
+    expected_chunk: 出租车单次不超过80元
+    reference_answer: 80 元。
+
+  - id: fin-108
+    category: factual
+    difficulty: L1
+    question: 部门经理每月的岗位话费补贴是多少？
+    expected_sources: [finance-policy.md]
+    expected_facts: ["100元"]
+    expected_chunk: 部门经理每月100元
+    reference_answer: 100 元。
+
+  - id: fin-109
+    category: factual
+    difficulty: L3
+    question: 单次培训费超过多少需要人力资源部与财务部联合审批？
+    expected_sources: [finance-policy.md]
+    expected_facts: ["1万元"]
+    expected_chunk: 单次培训费超过1万元的
+    reference_answer: 1 万元。
+
+  # ============ 差旅（travel-policy.txt，TXT）============
+  - id: trv-001
+    category: factual
+    difficulty: L1
+    question: 每天餐补合计不能超过多少？
+    expected_sources: [travel-policy.txt]
+    expected_facts: ["100元"]
+    expected_chunk: 每日合计不超过100元
+    reference_answer: 100 元。
+
+  - id: trv-002
+    category: factual
+    difficulty: L1
+    question: 出差申请需要提前几个工作日提交？
+    expected_sources: [travel-policy.txt]
+    expected_facts: ["3个工作日"]
+    expected_chunk: 提前3个工作日在OA系统
+    reference_answer: 3 个工作日。
+
+  - id: trv-003
+    category: factual
+    difficulty: L1
+    question: 出差返回后多久内要提交报销？
+    expected_sources: [travel-policy.txt]
+    expected_facts: ["10个工作日"]
+    expected_chunk: 10个工作日内提交报销
+    reference_answer: 10 个工作日内。
+
+  - id: trv-101
+    category: factual
+    difficulty: L2
+    question: 去北京出差，住宿每晚的上限是多少？
+    expected_sources: [travel-policy.txt]
+    expected_facts: ["600元"]
+    expected_chunk: 每晚上限600元
+    reference_answer: 600 元。
+
+  - id: trv-102
+    category: factual
+    difficulty: L1
+    question: 午餐的餐补标准是多少？
+    expected_sources: [travel-policy.txt]
+    expected_facts: ["40元"]
+    expected_chunk: 午餐40元
+    reference_answer: 40 元。
+
+  - id: trv-103
+    category: factual
+    difficulty: L2
+    question: 飞机单程飞行超过多久可以申请升舱？
+    expected_sources: [travel-policy.txt]
+    expected_facts: ["6小时"]
+    expected_chunk: 超过6小时
+    reference_answer: 6 小时。
+
+  - id: trv-104
+    category: factual
+    difficulty: L2
+    question: 连续出差多长时间可以申请返程或调休？
+    expected_sources: [travel-policy.txt]
+    expected_facts: ["15天"]
+    expected_chunk: 连续出差超过15天
+    reference_answer: 15 天。
+
+  - id: trv-105
+    category: factual
+    difficulty: L1
+    question: 两人及以上同行出差，住宿怎么安排？
+    expected_sources: [travel-policy.txt]
+    expected_facts: ["标准间"]
+    expected_chunk: 住宿按标准间安排
+    reference_answer: 按标准间安排。
+
+  - id: trv-106
+    category: factual
+    difficulty: L2
+    question: 境外出差费用按什么汇率折算报销？
+    expected_sources: [travel-policy.txt]
+    expected_facts: ["中国银行"]
+    expected_chunk: 中国银行外汇牌价折算
+    reference_answer: 按中国银行外汇牌价折算。
+
+  # ============ IT（it-policy.pdf，PDF）============
+  - id: it-001
+    category: factual
+    difficulty: L1
+    question: 系统密码长度至少要求多少位？
+    expected_sources: [it-policy.pdf]
+    expected_facts: ["10位"]
+    expected_chunk: 密码长度不少于10位
+    reference_answer: 10 位。
+
+  - id: it-002
+    category: factual
+    difficulty: L1
+    question: 密码需要多长时间更换一次？
+    expected_sources: [it-policy.pdf]
+    expected_facts: ["90天"]
+    expected_chunk: 密码每90天更换一次
+    reference_answer: 90 天。
+
+  - id: it-003
+    category: factual
+    difficulty: L1
+    question: 离职员工需要在多久内归还办公设备？
+    expected_sources: [it-policy.pdf]
+    expected_facts: ["3个工作日"]
+    expected_chunk: 3个工作日内将全部设备归还
+    reference_answer: 3 个工作日内。
+
+  - id: it-101
+    category: factual
+    difficulty: L2
+    question: 主管级别可以额外申请什么办公设备？
+    expected_sources: [it-policy.pdf]
+    expected_facts: ["显示器"]
+    expected_chunk: 外接显示器
+    reference_answer: 外接显示器一台。
+
+  - id: it-102
+    category: factual
+    difficulty: L1
+    question: 连接公共 Wi-Fi 时公司要求必须使用什么？
+    expected_sources: [it-policy.pdf]
+    expected_facts: ["VPN"]
+    expected_chunk: 使用公司VPN
+    reference_answer: 公司 VPN。
+
+  - id: it-103
+    category: factual
+    difficulty: L2
+    question: 设置密码时必须包含哪几类字符？
+    expected_sources: [it-policy.pdf]
+    expected_facts: ["特殊字符"]
+    expected_chunk: 大写字母、小写字母、数字和特殊字符
+    reference_answer: 大写字母、小写字母、数字和特殊字符。
+
+  - id: it-104
+    category: factual
+    difficulty: L1
+    question: 发生数据泄露等信息安全事件，多久内要上报？
+    expected_sources: [it-policy.pdf]
+    expected_facts: ["1小时"]
+    expected_chunk: 1小时内上报IT安全组
+    reference_answer: 1 小时内。
+
+  - id: it-105
+    category: factual
+    difficulty: L2
+    question: 远程办公需要经过谁审批？
+    expected_sources: [it-policy.pdf]
+    expected_facts: ["部门负责人"]
+    expected_chunk: 远程办公须经部门负责人审批
+    reference_answer: 部门负责人。
+
+  # ============ 无依据（应拒答，分布在多个主题）============
+  - id: neg-001
+    category: negative
+    question: 公司为员工提供宿舍吗？
+    expect_no_answer: true
+
+  - id: neg-002
+    category: negative
+    question: 员工商业补充医疗保险的报销比例是多少？
+    expect_no_answer: true
+
+  - id: neg-003
+    category: negative
+    question: 公司有股票期权激励计划吗？
+    expect_no_answer: true
+
+  - id: neg-004
+    category: negative
+    question: 员工购车有哪些补贴政策？
+    expect_no_answer: true
+
+  - id: neg-005
+    category: negative
+    question: 公司团建活动经费标准是多少？
+    expect_no_answer: true
+
+  - id: neg-006
+    category: negative
+    question: 员工心理咨询服务怎么预约？
+    expect_no_answer: true
+
+  - id: neg-007
+    category: negative
+    question: 员工子女教育补贴是多少？
+    expect_no_answer: true

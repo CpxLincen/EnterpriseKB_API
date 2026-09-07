@@ -20,9 +20,10 @@ from pypdf import PdfReader  # 用于提取文字型 PDF 的文本
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import Document, DocumentChunk, KnowledgeBase
-from app.providers import OpenAICompatibleProvider
-from app.settings import ProviderConfig
+from app.models.knowledge import Document, DocumentChunk, KnowledgeBase
+from app.services.providers import OpenAICompatibleProvider
+from app.services.retrieval import invalidate
+from app.core.config import ProviderConfig
 
 
 def read_document(path: Path) -> list[tuple[str, int | None]]:
@@ -145,4 +146,5 @@ def ingest_file(
     # 用 zip 把 (文本, 页码) 与向量一一配对，生成文本块记录并批量写入
     session.add_all(DocumentChunk(document_id=document.id, content=content, page_number=page, chunk_index=index, embedding=vector) for index, ((content, page), vector) in enumerate(zip(pieces, vectors)))
     session.commit()  # 一次性提交全部变更
+    invalidate(kb.id)  # 文本块已变化，使该知识库的 BM25 缓存失效
     return len(pieces)  # 返回本次导入的块数

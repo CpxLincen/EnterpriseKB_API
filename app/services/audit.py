@@ -45,9 +45,15 @@ def log_event(
     ip: str | None = None,
     extra: dict | None = None,
 ) -> None:
-    """记录一条审计事件（JSON 行）。"""
+    """记录一条审计事件（JSON 行 + 数据库）。
+
+    1. 以 JSON 行输出到 stdout（容器日志采集）与（可选）AUDIT_LOG_FILE；
+    2. 持久化到 audit_logs 表，供前端「审计日志」页面查询。
+    数据库写入为“尽力而为”：失败时仅记录错误，不中断主业务流程。
+    """
+    ts = datetime.now(timezone.utc)
     entry: dict = {
-        "ts": datetime.now(timezone.utc).isoformat(),
+        "ts": ts.isoformat(),
         "action": action,
         "user": user,
         "ip": ip,
@@ -56,3 +62,35 @@ def log_event(
     if extra:
         entry.update(extra)
     logger.info(json.dumps(entry, ensure_ascii=False))
+    _persist_to_db(ts=ts, action=action, user=user, ip=ip, detail=detail, extra=extra)
+
+
+def _persist_to_db(
+    *,
+    ts: datetime,
+    action: str,
+    user: str | None,
+    ip: str | None,
+    detail: str | None,
+    extra: dict | None,
+) -> None:
+    """把审计事件写入 audit_logs 表（尽力而为，失败不影响主流程）。"""
+    try:
+        # 函数级导入，避免模块加载顺序问题（audit.py 被 api.py 最先导入）
+        from app.core.database import SessionLocal
+        from app.models.audit import AuditLog
+
+        with SessionLocal() as session:
+            session.add(
+                AuditLog(
+                    ts=ts,
+                    action=action,
+                    user=user,
+                    ip=ip,
+                    detail=detail,
+                    extra=extra or None,
+                )
+            )
+            session.commit()
+    except Exception:  # noqa: BLE001 - 审计落库失败不能影响业务请求
+        logger.exception("Failed to persist audit log to database.")

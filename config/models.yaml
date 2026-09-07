@@ -16,3 +16,28 @@ providers:
     chat_model: deepseek-chat
     # DeepSeek currently does not provide embeddings. Keep embeddings on Qwen.
     embedding_provider: qwen
+
+# 混合检索（稠密向量 + BM25 稀疏，RRF 融合）配置：
+#   top_k       最终返回给大模型的文本块数
+#   candidates  稠密/稀疏两路各自先取的候选数（越大召回越全、越慢）
+#   rrf_k       RRF 融合常数（越大排名权重越平缓）
+#   rerank      可选的 BGE 交叉编码器重排（进一步提升 top-k 精度）：
+#     enabled     是否启用（首次使用需下载模型约 568MB，且需 FlagEmbedding 依赖）
+#     model       重排模型名（默认 bge-reranker-v2-m3，多语言、支持中文）
+#     candidates  RRF 结果送入重排器的候选数
+#     fp16        半精度推理：auto（有 CUDA 自动开）/ true / false
+retrieval:
+  top_k: 5
+  candidates: 20
+  rrf_k: 60
+  rerank:
+    enabled: true
+    model: E:/EnterpriseKB/models/bge-reranker-v2-m3
+    candidates: 10
+    fp16: auto
+  # 防幻觉门禁：以稠密距离为主、Rerank 分为辅（见 app/rag.py 的 should_refuse）。
+  #   rerank_floor  稠密通过但最高重排分低于该值 → 判为“太弱”拒答（收紧，减少弱命中误答）
+  #   rerank_rescue 稠密超阈值但最高重排分达到该值 → 救援放行（防止 BM25/Rerank 强命中被误拒）
+  gate:
+    rerank_floor: 0.05
+    rerank_rescue: 0.5

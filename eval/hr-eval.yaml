@@ -1,0 +1,52 @@
+# 评测集：hr 知识库（员工手册）回答准确定验证
+#
+# 字段说明：
+#   id                题目唯一编号
+#   category          分类（factual=事实型；negative=无依据型，可自由扩展）
+#   question          用户问题
+#   reference_answer  参考答案（供 --judge 语义判分使用）
+#   expected_sources  预期命中的来源文件名（用于计算检索命中率）
+#   expected_facts    回答必须包含的关键事实（用于子串匹配计算事实覆盖率）
+#   expect_no_answer  true 表示该题知识库无依据，应被拒答
+#
+# 详细构建方法见 eval/README.md。
+name: hr-eval-v1
+knowledge_base: hr
+cases:
+  - id: hr-001
+    category: factual
+    question: 员工累计工作满 8 年，每年能享受几天带薪年假？
+    reference_answer: 5 天带薪年休假。
+    expected_sources: [employee-handbook.md]
+    expected_facts: ["5天"]
+
+  - id: hr-002
+    category: factual
+    question: 员工累计工作满 15 年，带薪年假是多少天？
+    reference_answer: 10 天带薪年休假。
+    expected_sources: [employee-handbook.md]
+    expected_facts: ["10天"]
+
+  - id: hr-003
+    category: factual
+    question: 请假需要提前多久提交申请？
+    reference_answer: 至少提前一个工作日提交申请。
+    expected_sources: [employee-handbook.md]
+    expected_facts: ["一个工作日"]
+
+  - id: hr-004
+    category: factual
+    question: 遇到紧急情况无法提前请假时应该怎么做？
+    reference_answer: 先电话告知主管，并在恢复工作后补交申请。
+    expected_sources: [employee-handbook.md]
+    expected_facts: ["电话", "补交"]
+
+  - id: hr-005
+    category: negative
+    question: 公司为员工提供宿舍吗？
+    expect_no_answer: true
+
+  - id: hr-006
+    category: negative
+    question: 员工加班费如何计算？
+    expect_no_answer: true

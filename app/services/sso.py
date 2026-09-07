@@ -16,7 +16,7 @@ import urllib.request
 
 import jwt
 
-from app.settings import SsoConfig, sso_config
+from app.core.config import SsoConfig, sso_config
 
 
 class SSONotConfigured(Exception):

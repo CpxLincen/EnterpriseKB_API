@@ -10,8 +10,8 @@ from datetime import datetime, timedelta, timezone
 
 import jwt
 
-from app.auth.models import User
-from app.settings import auth_jwt_secret, auth_token_ttl_minutes
+from app.models.auth import User
+from app.core.config import auth_jwt_secret, auth_token_ttl_minutes
 
 ALGORITHM = "HS256"
 ISSUER = "enterprise-kb"

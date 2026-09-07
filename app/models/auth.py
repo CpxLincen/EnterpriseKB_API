@@ -15,8 +15,8 @@ from datetime import datetime
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database import Base
-from app.models import KnowledgeBase
+from app.core.database import Base
+from app.models.knowledge import KnowledgeBase
 
 
 class User(Base):

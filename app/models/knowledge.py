@@ -18,7 +18,7 @@ from pgvector.sqlalchemy import Vector  # pgvector 提供的向量字段类型
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database import Base  # SQLAlchemy 声明式基类
+from app.core.database import Base  # SQLAlchemy 声明式基类
 
 
 class KnowledgeBase(Base):

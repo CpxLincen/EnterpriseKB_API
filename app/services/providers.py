@@ -13,7 +13,7 @@ openai SDK 封装一个统一客户端。业务代码只依赖本模块，不直
 
 from openai import OpenAI
 
-from app.settings import ProviderConfig
+from app.core.config import ProviderConfig
 
 
 class OpenAICompatibleProvider:
@@ -65,3 +65,23 @@ class OpenAICompatibleProvider:
             messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
         )
         return response.choices[0].message.content or ""
+
+    def chat_stream(self, system: str, user: str):
+        """流式调用聊天模型，逐块产出回答增量文本（生成器）。
+
+        与 chat() 参数一致、prompt 一致，区别在于开启 stream=True 并逐个
+        yield 模型返回的 content 增量，供前端 SSE 流式渲染。
+        """
+        response = self.client.chat.completions.create(
+            model=self.config.chat_model,
+            temperature=0.1,
+            messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
+            stream=True,
+        )
+        for chunk in response:
+            if not chunk.choices:
+                continue
+            delta = chunk.choices[0].delta
+            content = getattr(delta, "content", None)
+            if content:
+                yield content

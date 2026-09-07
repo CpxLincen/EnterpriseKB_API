@@ -13,24 +13,18 @@ import secrets
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
-from pydantic import BaseModel
 from sqlalchemy import select
 
-from app.audit import log_event
-from app.auth.dependencies import get_current_user
-from app.auth.models import User
-from app.auth.security import create_access_token, create_login_state, verify_login_state
-from app.auth.sso import SSONotConfigured, SsoError, SsoProvider
-from app.database import SessionLocal
-from app.settings import auth_dev_mode
+from app.services.audit import log_event
+from app.routers.deps import get_current_user
+from app.models.auth import User
+from app.core.security import create_access_token, create_login_state, verify_login_state
+from app.services.sso import SSONotConfigured, SsoError, SsoProvider
+from app.core.database import SessionLocal
+from app.core.config import auth_dev_mode
+from app.schemas import LoginRequest
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-
-
-class LoginRequest(BaseModel):
-    """开发模式登录请求体。"""
-
-    username: str
 
 
 def _client_ip(request: Request) -> str | None:

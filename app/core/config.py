@@ -20,7 +20,7 @@ import yaml
 from dotenv import load_dotenv
 
 # 项目根目录（本文件位于 app/ 下，往上一级即为项目根目录）
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 # 加载项目根目录下的 .env 文件（其中写入 API Key、DATABASE_URL 等环境变量）
 load_dotenv(ROOT / ".env")
@@ -41,6 +41,21 @@ class ProviderConfig:
     embedding_model: str | None  # Embedding 模型名；None 表示该供应商不提供 Embedding
     embedding_dimensions: int | None  # Embedding 向量维度；None 表示未配置
     retrieval_threshold: float = 0.65  # 检索距离阈值（1 - 余弦相似度），超过则判定无相关依据
+
+
+@dataclass(frozen=True)
+class RetrievalConfig:
+    """混合检索配置（config/models.yaml 的 retrieval 段）。"""
+
+    top_k: int = 5  # 最终返回给模型的文本块数
+    candidates: int = 20  # 每一路（稠密/稀疏）先取的候选数
+    rrf_k: int = 60  # RRF 融合常数，越大越平缓
+    rerank_enabled: bool = False  # 是否在 RRF 后用 BGE 交叉编码器重排
+    rerank_model: str = "BAAI/bge-reranker-v2-m3"  # Rerank 模型名
+    rerank_candidates: int = 10  # 送入 Rerank 的候选数（RRF 的前 N 个）
+    rerank_fp16: str = "auto"  # 半精度推理：auto=自动（有 CUDA 则 true），或 true/false
+    rerank_floor: float | None = None  # 防幻觉门禁：稠密通过但重排分低于该值则拒答（None=不收紧）
+    rerank_rescue: float | None = None  # 防幻觉门禁：稠密超阈值但重排分达到该值则救援放行（None=不救援）
 
 
 def database_url() -> str:
@@ -148,4 +163,24 @@ def get_provider(name: str | None = None, *, for_embeddings: bool = False) -> Pr
         embedding_model=raw.get("embedding_model"),
         embedding_dimensions=raw.get("embedding_dimensions"),
         retrieval_threshold=raw.get("retrieval_threshold", 0.65),
+    )
+
+
+def retrieval_config() -> RetrievalConfig:
+    """读取混合检索配置（top_k / candidates / rrf_k）。"""
+    raw = _raw_config().get("retrieval") or {}
+    rerank = raw.get("rerank") or {}
+    gate = raw.get("gate") or {}
+    rerank_floor = gate.get("rerank_floor")
+    rerank_rescue = gate.get("rerank_rescue")
+    return RetrievalConfig(
+        top_k=int(raw.get("top_k", 5)),
+        candidates=int(raw.get("candidates", 20)),
+        rrf_k=int(raw.get("rrf_k", 60)),
+        rerank_enabled=bool(rerank.get("enabled", False)),
+        rerank_model=str(rerank.get("model", "BAAI/bge-reranker-v2-m3")),
+        rerank_candidates=int(rerank.get("candidates", 10)),
+        rerank_fp16=str(rerank.get("fp16", "auto")),
+        rerank_floor=float(rerank_floor) if rerank_floor is not None else None,
+        rerank_rescue=float(rerank_rescue) if rerank_rescue is not None else None,
     )

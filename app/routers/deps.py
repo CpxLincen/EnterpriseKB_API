@@ -12,10 +12,10 @@ from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 
-from app.auth.models import KnowledgeBaseAccess, User
-from app.auth.security import decode_access_token
-from app.database import SessionLocal
-from app.models import KnowledgeBase
+from app.models.auth import KnowledgeBaseAccess, User
+from app.core.security import decode_access_token
+from app.core.database import SessionLocal
+from app.models.knowledge import KnowledgeBase
 
 # auto_error=False：无 Authorization 头时不立即报错，由下方逻辑统一处理 401
 _bearer_scheme = HTTPBearer(auto_error=False)
@@ -80,3 +80,10 @@ def require_kb_access(*, write: bool = False):
         return user
 
     return dependency
+
+
+def require_admin(user: User = Depends(get_current_user)) -> User:
+    """要求当前用户为 admin 角色，否则 403。用于评测等运维/验证类端点。"""
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="需要管理员权限。")
+    return user

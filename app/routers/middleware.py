@@ -9,9 +9,9 @@ from __future__ import annotations
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
-from app.auth.models import User
-from app.auth.security import decode_access_token
-from app.database import SessionLocal
+from app.models.auth import User
+from app.core.security import decode_access_token
+from app.core.database import SessionLocal
 
 # 无需认证即可访问的路径
 PUBLIC_PATHS = {

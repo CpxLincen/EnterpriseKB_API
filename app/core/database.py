@@ -12,11 +12,17 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-from app.settings import database_url
+from app.core.config import database_url
 
 # 创建数据库引擎；pool_pre_ping 在每次取连接前先探测连接是否有效，
 # 避免数据库重启后遗留的失效连接导致报错
-engine = create_engine(database_url(), pool_pre_ping=True)
+# connect_args 的 connect_timeout 让数据库不可达时快速失败（默认无限等待，
+# 评测/启动脚本会因此卡住），仅对 psycopg 生效，不影响其他驱动。
+engine = create_engine(
+    database_url(),
+    pool_pre_ping=True,
+    connect_args={"connect_timeout": 10},
+)
 
 # 会话工厂：后续所有数据库操作通过 SessionLocal() 打开会话；
 # expire_on_commit=False 表示提交后对象属性仍可直接读取，无需重新查询
@@ -31,8 +37,9 @@ class Base(DeclarativeBase):
 
 def init_db() -> None:
     """初始化数据库：启用 pgvector 扩展并创建全部数据表（若不存在）。"""
-    from app import models  # noqa: F401  # 导入模型，将其注册到 Base.metadata
-    from app.auth import models as auth_models  # noqa: F401  # 认证表（users / knowledge_base_access）
+    from app.models import audit as audit_models  # noqa: F401  # 审计日志表
+    from app.models import auth as auth_models  # noqa: F401  # 认证表（users / knowledge_base_access）
+    from app.models import knowledge as knowledge_models  # noqa: F401  # 知识库/文档/文本块表
 
     with engine.begin() as connection:
         # 启用 pgvector 扩展（幂等操作，已存在则跳过）

@@ -1,0 +1,2638 @@
+{
+  "summary": {
+    "total": 50,
+    "answered": 43,
+    "no_answer": 7,
+    "retrieval_recall": {
+      "n": 43,
+      "hit": 43,
+      "rate": 1.0
+    },
+    "fact_accuracy": {
+      "n": 43,
+      "hit": 43,
+      "rate": 1.0
+    },
+    "no_answer_accuracy": {
+      "n": 7,
+      "correct": 7,
+      "rate": 1.0
+    },
+    "judge_accuracy": null,
+    "chunk_retrieval": {
+      "n": 43,
+      "recall_at_5": 1.0,
+      "hit_at_1": 0.9535,
+      "hit_at_3": 1.0,
+      "hit_at_5": 1.0,
+      "mrr": 0.9767
+    },
+    "difficulty_breakdown": {
+      "L1": {
+        "n": 21,
+        "hit": 21,
+        "rate": 1.0
+      },
+      "L2": {
+        "n": 15,
+        "hit": 15,
+        "rate": 1.0
+      },
+      "L3": {
+        "n": 7,
+        "hit": 7,
+        "rate": 1.0
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "hr-001",
+      "category": "factual",
+      "difficulty": "L1",
+      "knowledge_base": "enterprise",
+      "question": "员工累计工作满 8 年，每年能享受几天带薪年假？",
+      "answer": "员工累计工作满 8 年，属于“满 1 年不满 10 年”的区间，因此每年享受 **5 天**带薪年休假 [1]。",
+      "citations": [
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "用期提前 3 天通知。\n\n离职当月在岗满 15 天的，按整月结算工资。\n\n## 八、绩效与调薪\n\n公司每年 1 月开展年度绩效考核，结果分为 S/A/B/C/D 五档。\n\n年度调薪与晋升依据考核结果确定；连续两年考核为 D 的进入绩效改进计划。\n\n## 九、培训与发展\n\n新员工入职后须完成入职培训；公司每年为员工提供不少于 40 学时的培训。\n\n员工可申请与岗位相关的内外部培训，费用按公司规定报销。\n\n## 十、奖励与纪律\n\n对公司有突出贡献的员工给予表彰和奖励；严重违反制度"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "，住宿按标准间安排；如需单间，须部门负责人审批。\n\n十一、报销凭证\n\n所有费用须提供真实有效的发票或凭证；凭证不齐全的，财务部有权退回。\n\n十二、交通意外处理\n\n出差途中发生交通意外，须第一时间联系公司行政部，并保留事故证明用于保险理赔。"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "employee-handbook.md"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "5天"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "享受5天带薪年休假",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "hr-002",
+      "category": "factual",
+      "difficulty": "L1",
+      "knowledge_base": "enterprise",
+      "question": "员工累计工作满 15 年，带薪年假是多少天？",
+      "answer": "根据员工手册规定，员工累计工作满 10 年不满 20 年的，享受 10 天带薪年休假 [1]。  \n满 15 年属于该区间（10 ≤ 工作年限 < 20），因此带薪年假为 **10 天**。",
+      "citations": [
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "用期提前 3 天通知。\n\n离职当月在岗满 15 天的，按整月结算工资。\n\n## 八、绩效与调薪\n\n公司每年 1 月开展年度绩效考核，结果分为 S/A/B/C/D 五档。\n\n年度调薪与晋升依据考核结果确定；连续两年考核为 D 的进入绩效改进计划。\n\n## 九、培训与发展\n\n新员工入职后须完成入职培训；公司每年为员工提供不少于 40 学时的培训。\n\n员工可申请与岗位相关的内外部培训，费用按公司规定报销。\n\n## 十、奖励与纪律\n\n对公司有突出贡献的员工给予表彰和奖励；严重违反制度"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "部门经理与财务经理双签后支取。\n\n借款应在出差返回后 15 个工作日内报销核销，余额退还公司。\n\n逾期未核销的，暂停后续借款，并可在工资中据实抵扣。\n\n## 四、采购审批权限\n\n单笔 5000 元以下的采购由部门经理审批。\n\n5000 元（含）至 5 万元的采购由分管副总审批。\n\n5 万元（含）以上的采购由总经理审批，并须签订正式合同。\n\n## 五、预算管理\n\n各部门应在每年 11 月 30 日前提交下一年度费用预算；预算外支出须单独报总经理审批。\n\n## 六、附则\n\n本制度"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "employee-handbook.md"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "10天"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "满10年不满20年的，享受10天",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "hr-003",
+      "category": "factual",
+      "difficulty": "L1",
+      "knowledge_base": "enterprise",
+      "question": "请假需要提前多久提交申请？",
+      "answer": "请假应至少提前一个工作日在系统中提交申请 [2]。",
+      "citations": [
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "用期提前 3 天通知。\n\n离职当月在岗满 15 天的，按整月结算工资。\n\n## 八、绩效与调薪\n\n公司每年 1 月开展年度绩效考核，结果分为 S/A/B/C/D 五档。\n\n年度调薪与晋升依据考核结果确定；连续两年考核为 D 的进入绩效改进计划。\n\n## 九、培训与发展\n\n新员工入职后须完成入职培训；公司每年为员工提供不少于 40 学时的培训。\n\n员工可申请与岗位相关的内外部培训，费用按公司规定报销。\n\n## 十、奖励与纪律\n\n对公司有突出贡献的员工给予表彰和奖励；严重违反制度"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "部门经理与财务经理双签后支取。\n\n借款应在出差返回后 15 个工作日内报销核销，余额退还公司。\n\n逾期未核销的，暂停后续借款，并可在工资中据实抵扣。\n\n## 四、采购审批权限\n\n单笔 5000 元以下的采购由部门经理审批。\n\n5000 元（含）至 5 万元的采购由分管副总审批。\n\n5 万元（含）以上的采购由总经理审批，并须签订正式合同。\n\n## 五、预算管理\n\n各部门应在每年 11 月 30 日前提交下一年度费用预算；预算外支出须单独报总经理审批。\n\n## 六、附则\n\n本制度"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "employee-handbook.md"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "一个工作日"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "至少提前一个工作日",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "hr-004",
+      "category": "factual",
+      "difficulty": "L1",
+      "knowledge_base": "enterprise",
+      "question": "遇到紧急情况无法提前请假时应该怎么做？",
+      "answer": "遇到紧急情况无法提前请假时，应先电话告知直属主管，并在恢复工作后补交请假申请 [2]。",
+      "citations": [
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "用期提前 3 天通知。\n\n离职当月在岗满 15 天的，按整月结算工资。\n\n## 八、绩效与调薪\n\n公司每年 1 月开展年度绩效考核，结果分为 S/A/B/C/D 五档。\n\n年度调薪与晋升依据考核结果确定；连续两年考核为 D 的进入绩效改进计划。\n\n## 九、培训与发展\n\n新员工入职后须完成入职培训；公司每年为员工提供不少于 40 学时的培训。\n\n员工可申请与岗位相关的内外部培训，费用按公司规定报销。\n\n## 十、奖励与纪律\n\n对公司有突出贡献的员工给予表彰和奖励；严重违反制度"
+        },
+        {
+          "filename": "it-policy.pdf",
+          "page_number": 3,
+          "chunk_index": 2,
+          "excerpt": "七、远程办公\n远程办公须经部门负责人审批，并使用公司配发的加密笔记本；禁止在网吧等公共场所处理公\n司业务。\n八、信息安全事件\n发生数据泄露或系统入侵等信息安全事件，须在 1 小时内上报 IT\n安全组，并保留现场证据，配合调查处置。"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "，住宿按标准间安排；如需单间，须部门负责人审批。\n\n十一、报销凭证\n\n所有费用须提供真实有效的发票或凭证；凭证不齐全的，财务部有权退回。\n\n十二、交通意外处理\n\n出差途中发生交通意外，须第一时间联系公司行政部，并保留事故证明用于保险理赔。"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "employee-handbook.md"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "电话",
+        "补交"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "紧急情况可先电话告知主管",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "hr-101",
+      "category": "factual",
+      "difficulty": "L2",
+      "knowledge_base": "enterprise",
+      "question": "我累计工作满 12 年了，今年能休几天带薪年假？",
+      "answer": "根据员工手册规定，员工累计工作满 10 年不满 20 年的，享受 10 天带薪年休假 [1]。  \n您累计工作满 12 年，属于该区间，因此今年可休 **10 天** 带薪年假。",
+      "citations": [
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "用期提前 3 天通知。\n\n离职当月在岗满 15 天的，按整月结算工资。\n\n## 八、绩效与调薪\n\n公司每年 1 月开展年度绩效考核，结果分为 S/A/B/C/D 五档。\n\n年度调薪与晋升依据考核结果确定；连续两年考核为 D 的进入绩效改进计划。\n\n## 九、培训与发展\n\n新员工入职后须完成入职培训；公司每年为员工提供不少于 40 学时的培训。\n\n员工可申请与岗位相关的内外部培训，费用按公司规定报销。\n\n## 十、奖励与纪律\n\n对公司有突出贡献的员工给予表彰和奖励；严重违反制度"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "，住宿按标准间安排；如需单间，须部门负责人审批。\n\n十一、报销凭证\n\n所有费用须提供真实有效的发票或凭证；凭证不齐全的，财务部有权退回。\n\n十二、交通意外处理\n\n出差途中发生交通意外，须第一时间联系公司行政部，并保留事故证明用于保险理赔。"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "employee-handbook.md"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "10天"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "满10年不满20年的，享受10天",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "hr-102",
+      "category": "factual",
+      "difficulty": "L2",
+      "knowledge_base": "enterprise",
+      "question": "想请年假的话，需要预留多长时间提交申请？",
+      "answer": "根据《员工手册》规定，年假属于请假的一种，应遵循统一的请假流程：**请假应至少提前一个工作日在系统中提交申请，由直属主管审批** [1]。\n\n因此，想请年假的话，需要**至少提前一个工作日**提交申请。",
+      "citations": [
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "用期提前 3 天通知。\n\n离职当月在岗满 15 天的，按整月结算工资。\n\n## 八、绩效与调薪\n\n公司每年 1 月开展年度绩效考核，结果分为 S/A/B/C/D 五档。\n\n年度调薪与晋升依据考核结果确定；连续两年考核为 D 的进入绩效改进计划。\n\n## 九、培训与发展\n\n新员工入职后须完成入职培训；公司每年为员工提供不少于 40 学时的培训。\n\n员工可申请与岗位相关的内外部培训，费用按公司规定报销。\n\n## 十、奖励与纪律\n\n对公司有突出贡献的员工给予表彰和奖励；严重违反制度"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "部门经理与财务经理双签后支取。\n\n借款应在出差返回后 15 个工作日内报销核销，余额退还公司。\n\n逾期未核销的，暂停后续借款，并可在工资中据实抵扣。\n\n## 四、采购审批权限\n\n单笔 5000 元以下的采购由部门经理审批。\n\n5000 元（含）至 5 万元的采购由分管副总审批。\n\n5 万元（含）以上的采购由总经理审批，并须签订正式合同。\n\n## 五、预算管理\n\n各部门应在每年 11 月 30 日前提交下一年度费用预算；预算外支出须单独报总经理审批。\n\n## 六、附则\n\n本制度"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "employee-handbook.md"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "一个工作日"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "至少提前一个工作日",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "hr-103",
+      "category": "factual",
+      "difficulty": "L2",
+      "knowledge_base": "enterprise",
+      "question": "突然生病没办法提前请假，公司规定怎么处理？",
+      "answer": "根据公司规定，如遇突发疾病无法提前请假，可先电话告知直属主管，待恢复工作后补交病假申请[2]。  \n但需注意：病假须提供医院诊断证明；若连续病假超过3天，须提供二级以上医院出具的证明[1]。",
+      "citations": [
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "用期提前 3 天通知。\n\n离职当月在岗满 15 天的，按整月结算工资。\n\n## 八、绩效与调薪\n\n公司每年 1 月开展年度绩效考核，结果分为 S/A/B/C/D 五档。\n\n年度调薪与晋升依据考核结果确定；连续两年考核为 D 的进入绩效改进计划。\n\n## 九、培训与发展\n\n新员工入职后须完成入职培训；公司每年为员工提供不少于 40 学时的培训。\n\n员工可申请与岗位相关的内外部培训，费用按公司规定报销。\n\n## 十、奖励与纪律\n\n对公司有突出贡献的员工给予表彰和奖励；严重违反制度"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "，住宿按标准间安排；如需单间，须部门负责人审批。\n\n十一、报销凭证\n\n所有费用须提供真实有效的发票或凭证；凭证不齐全的，财务部有权退回。\n\n十二、交通意外处理\n\n出差途中发生交通意外，须第一时间联系公司行政部，并保留事故证明用于保险理赔。"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "部门经理与财务经理双签后支取。\n\n借款应在出差返回后 15 个工作日内报销核销，余额退还公司。\n\n逾期未核销的，暂停后续借款，并可在工资中据实抵扣。\n\n## 四、采购审批权限\n\n单笔 5000 元以下的采购由部门经理审批。\n\n5000 元（含）至 5 万元的采购由分管副总审批。\n\n5 万元（含）以上的采购由总经理审批，并须签订正式合同。\n\n## 五、预算管理\n\n各部门应在每年 11 月 30 日前提交下一年度费用预算；预算外支出须单独报总经理审批。\n\n## 六、附则\n\n本制度"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "employee-handbook.md"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "电话",
+        "补交"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "紧急情况可先电话告知主管",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "hr-104",
+      "category": "factual",
+      "difficulty": "L3",
+      "knowledge_base": "enterprise",
+      "question": "员工累计工作满 20 年，带薪年假是多少天？",
+      "answer": "员工累计工作满 20 年，享受 15 天带薪年休假 [1]。",
+      "citations": [
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "用期提前 3 天通知。\n\n离职当月在岗满 15 天的，按整月结算工资。\n\n## 八、绩效与调薪\n\n公司每年 1 月开展年度绩效考核，结果分为 S/A/B/C/D 五档。\n\n年度调薪与晋升依据考核结果确定；连续两年考核为 D 的进入绩效改进计划。\n\n## 九、培训与发展\n\n新员工入职后须完成入职培训；公司每年为员工提供不少于 40 学时的培训。\n\n员工可申请与岗位相关的内外部培训，费用按公司规定报销。\n\n## 十、奖励与纪律\n\n对公司有突出贡献的员工给予表彰和奖励；严重违反制度"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "部门经理与财务经理双签后支取。\n\n借款应在出差返回后 15 个工作日内报销核销，余额退还公司。\n\n逾期未核销的，暂停后续借款，并可在工资中据实抵扣。\n\n## 四、采购审批权限\n\n单笔 5000 元以下的采购由部门经理审批。\n\n5000 元（含）至 5 万元的采购由分管副总审批。\n\n5 万元（含）以上的采购由总经理审批，并须签订正式合同。\n\n## 五、预算管理\n\n各部门应在每年 11 月 30 日前提交下一年度费用预算；预算外支出须单独报总经理审批。\n\n## 六、附则\n\n本制度"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "employee-handbook.md"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "15天"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "满20年的，享受15天",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "hr-105",
+      "category": "factual",
+      "difficulty": "L3",
+      "knowledge_base": "enterprise",
+      "question": "累计工作满 10 年但不满 20 年的员工，年假标准是什么？",
+      "answer": "累计工作满 10 年但不满 20 年的员工，享受 10 天带薪年休假 [1]。",
+      "citations": [
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "用期提前 3 天通知。\n\n离职当月在岗满 15 天的，按整月结算工资。\n\n## 八、绩效与调薪\n\n公司每年 1 月开展年度绩效考核，结果分为 S/A/B/C/D 五档。\n\n年度调薪与晋升依据考核结果确定；连续两年考核为 D 的进入绩效改进计划。\n\n## 九、培训与发展\n\n新员工入职后须完成入职培训；公司每年为员工提供不少于 40 学时的培训。\n\n员工可申请与岗位相关的内外部培训，费用按公司规定报销。\n\n## 十、奖励与纪律\n\n对公司有突出贡献的员工给予表彰和奖励；严重违反制度"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "，住宿按标准间安排；如需单间，须部门负责人审批。\n\n十一、报销凭证\n\n所有费用须提供真实有效的发票或凭证；凭证不齐全的，财务部有权退回。\n\n十二、交通意外处理\n\n出差途中发生交通意外，须第一时间联系公司行政部，并保留事故证明用于保险理赔。"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "employee-handbook.md"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "10天"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "满10年不满20年的，享受10天",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "hr-106",
+      "category": "factual",
+      "difficulty": "L1",
+      "knowledge_base": "enterprise",
+      "question": "标准工作时间的起止是几点？",
+      "answer": "标准工作时间为周一至周五 9:00-18:00 [4]。",
+      "citations": [
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        },
+        {
+          "filename": "it-policy.pdf",
+          "page_number": 3,
+          "chunk_index": 2,
+          "excerpt": "七、远程办公\n远程办公须经部门负责人审批，并使用公司配发的加密笔记本；禁止在网吧等公共场所处理公\n司业务。\n八、信息安全事件\n发生数据泄露或系统入侵等信息安全事件，须在 1 小时内上报 IT\n安全组，并保留现场证据，配合调查处置。"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "用期提前 3 天通知。\n\n离职当月在岗满 15 天的，按整月结算工资。\n\n## 八、绩效与调薪\n\n公司每年 1 月开展年度绩效考核，结果分为 S/A/B/C/D 五档。\n\n年度调薪与晋升依据考核结果确定；连续两年考核为 D 的进入绩效改进计划。\n\n## 九、培训与发展\n\n新员工入职后须完成入职培训；公司每年为员工提供不少于 40 学时的培训。\n\n员工可申请与岗位相关的内外部培训，费用按公司规定报销。\n\n## 十、奖励与纪律\n\n对公司有突出贡献的员工给予表彰和奖励；严重违反制度"
+        },
+        {
+          "filename": "it-policy.pdf",
+          "page_number": 2,
+          "chunk_index": 1,
+          "excerpt": "四、网络安全\n连接公共 Wi-Fi 时须使用公司\nVPN；禁止在未加密信道传输敏感数据。收到可疑邮件或链接，须及时上报 IT\n安全组，不得点击或转发。\n五、数据备份与保密\n重要文件须定期备份至公司网盘；严禁将含客户或员工信息的数据存放到个人设备或第三方云\n盘。\n六、设备归还\n离职员工须在 3 个工作日内将全部设备归还 IT\n部，并完成数据清除。设备丢失或人为损坏的，按设备残值赔偿。"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "employee-handbook.md"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "9:00"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "9:00-18:00",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "hr-107",
+      "category": "factual",
+      "difficulty": "L1",
+      "knowledge_base": "enterprise",
+      "question": "婚假有多少天？",
+      "answer": "婚假有3天[5]。",
+      "citations": [
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "用期提前 3 天通知。\n\n离职当月在岗满 15 天的，按整月结算工资。\n\n## 八、绩效与调薪\n\n公司每年 1 月开展年度绩效考核，结果分为 S/A/B/C/D 五档。\n\n年度调薪与晋升依据考核结果确定；连续两年考核为 D 的进入绩效改进计划。\n\n## 九、培训与发展\n\n新员工入职后须完成入职培训；公司每年为员工提供不少于 40 学时的培训。\n\n员工可申请与岗位相关的内外部培训，费用按公司规定报销。\n\n## 十、奖励与纪律\n\n对公司有突出贡献的员工给予表彰和奖励；严重违反制度"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "，住宿按标准间安排；如需单间，须部门负责人审批。\n\n十一、报销凭证\n\n所有费用须提供真实有效的发票或凭证；凭证不齐全的，财务部有权退回。\n\n十二、交通意外处理\n\n出差途中发生交通意外，须第一时间联系公司行政部，并保留事故证明用于保险理赔。"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "employee-handbook.md"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "3天"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "婚假3天",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "hr-108",
+      "category": "factual",
+      "difficulty": "L2",
+      "knowledge_base": "enterprise",
+      "question": "正式员工离职需要提前多久书面通知公司？",
+      "answer": "正式员工离职须提前30天书面通知公司 [1]。",
+      "citations": [
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "用期提前 3 天通知。\n\n离职当月在岗满 15 天的，按整月结算工资。\n\n## 八、绩效与调薪\n\n公司每年 1 月开展年度绩效考核，结果分为 S/A/B/C/D 五档。\n\n年度调薪与晋升依据考核结果确定；连续两年考核为 D 的进入绩效改进计划。\n\n## 九、培训与发展\n\n新员工入职后须完成入职培训；公司每年为员工提供不少于 40 学时的培训。\n\n员工可申请与岗位相关的内外部培训，费用按公司规定报销。\n\n## 十、奖励与纪律\n\n对公司有突出贡献的员工给予表彰和奖励；严重违反制度"
+        },
+        {
+          "filename": "it-policy.pdf",
+          "page_number": 2,
+          "chunk_index": 1,
+          "excerpt": "四、网络安全\n连接公共 Wi-Fi 时须使用公司\nVPN；禁止在未加密信道传输敏感数据。收到可疑邮件或链接，须及时上报 IT\n安全组，不得点击或转发。\n五、数据备份与保密\n重要文件须定期备份至公司网盘；严禁将含客户或员工信息的数据存放到个人设备或第三方云\n盘。\n六、设备归还\n离职员工须在 3 个工作日内将全部设备归还 IT\n部，并完成数据清除。设备丢失或人为损坏的，按设备残值赔偿。"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "employee-handbook.md"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "30天"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "提前30天书面通知",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "hr-109",
+      "category": "factual",
+      "difficulty": "L3",
+      "knowledge_base": "enterprise",
+      "question": "连续病假超过多少天需要提供二级以上医院证明？",
+      "answer": "连续病假超过 3 天需要提供二级以上医院证明 [3]。",
+      "citations": [
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "，住宿按标准间安排；如需单间，须部门负责人审批。\n\n十一、报销凭证\n\n所有费用须提供真实有效的发票或凭证；凭证不齐全的，财务部有权退回。\n\n十二、交通意外处理\n\n出差途中发生交通意外，须第一时间联系公司行政部，并保留事故证明用于保险理赔。"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "用期提前 3 天通知。\n\n离职当月在岗满 15 天的，按整月结算工资。\n\n## 八、绩效与调薪\n\n公司每年 1 月开展年度绩效考核，结果分为 S/A/B/C/D 五档。\n\n年度调薪与晋升依据考核结果确定；连续两年考核为 D 的进入绩效改进计划。\n\n## 九、培训与发展\n\n新员工入职后须完成入职培训；公司每年为员工提供不少于 40 学时的培训。\n\n员工可申请与岗位相关的内外部培训，费用按公司规定报销。\n\n## 十、奖励与纪律\n\n对公司有突出贡献的员工给予表彰和奖励；严重违反制度"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "部门经理与财务经理双签后支取。\n\n借款应在出差返回后 15 个工作日内报销核销，余额退还公司。\n\n逾期未核销的，暂停后续借款，并可在工资中据实抵扣。\n\n## 四、采购审批权限\n\n单笔 5000 元以下的采购由部门经理审批。\n\n5000 元（含）至 5 万元的采购由分管副总审批。\n\n5 万元（含）以上的采购由总经理审批，并须签订正式合同。\n\n## 五、预算管理\n\n各部门应在每年 11 月 30 日前提交下一年度费用预算；预算外支出须单独报总经理审批。\n\n## 六、附则\n\n本制度"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "employee-handbook.md"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "二级以上医院"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "连续病假超过3天的",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "fin-001",
+      "category": "factual",
+      "difficulty": "L1",
+      "knowledge_base": "enterprise",
+      "question": "一线城市住宿费报销上限是多少？",
+      "answer": "一线城市（北京、上海、广州、深圳）住宿费报销上限为 **600 元/晚** [1]。",
+      "citations": [
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "，住宿按标准间安排；如需单间，须部门负责人审批。\n\n十一、报销凭证\n\n所有费用须提供真实有效的发票或凭证；凭证不齐全的，财务部有权退回。\n\n十二、交通意外处理\n\n出差途中发生交通意外，须第一时间联系公司行政部，并保留事故证明用于保险理赔。"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "部门经理与财务经理双签后支取。\n\n借款应在出差返回后 15 个工作日内报销核销，余额退还公司。\n\n逾期未核销的，暂停后续借款，并可在工资中据实抵扣。\n\n## 四、采购审批权限\n\n单笔 5000 元以下的采购由部门经理审批。\n\n5000 元（含）至 5 万元的采购由分管副总审批。\n\n5 万元（含）以上的采购由总经理审批，并须签订正式合同。\n\n## 五、预算管理\n\n各部门应在每年 11 月 30 日前提交下一年度费用预算；预算外支出须单独报总经理审批。\n\n## 六、附则\n\n本制度"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "用期提前 3 天通知。\n\n离职当月在岗满 15 天的，按整月结算工资。\n\n## 八、绩效与调薪\n\n公司每年 1 月开展年度绩效考核，结果分为 S/A/B/C/D 五档。\n\n年度调薪与晋升依据考核结果确定；连续两年考核为 D 的进入绩效改进计划。\n\n## 九、培训与发展\n\n新员工入职后须完成入职培训；公司每年为员工提供不少于 40 学时的培训。\n\n员工可申请与岗位相关的内外部培训，费用按公司规定报销。\n\n## 十、奖励与纪律\n\n对公司有突出贡献的员工给予表彰和奖励；严重违反制度"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "finance-policy.md"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "600元"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "上限600元/晚",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "fin-002",
+      "category": "factual",
+      "difficulty": "L1",
+      "knowledge_base": "enterprise",
+      "question": "费用发生后多少天内需要提交报销？",
+      "answer": "员工应在费用发生后30日内提交报销[1]。  \n（注：该时限出自《财务管理制度》第二条“报销流程与时限”；差旅报销另有更严格要求——出差返回后10个工作日内提交，见[3]，但问题问的是泛指的“费用发生后”，故以通用制度为准。）",
+      "citations": [
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "部门经理与财务经理双签后支取。\n\n借款应在出差返回后 15 个工作日内报销核销，余额退还公司。\n\n逾期未核销的，暂停后续借款，并可在工资中据实抵扣。\n\n## 四、采购审批权限\n\n单笔 5000 元以下的采购由部门经理审批。\n\n5000 元（含）至 5 万元的采购由分管副总审批。\n\n5 万元（含）以上的采购由总经理审批，并须签订正式合同。\n\n## 五、预算管理\n\n各部门应在每年 11 月 30 日前提交下一年度费用预算；预算外支出须单独报总经理审批。\n\n## 六、附则\n\n本制度"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "用期提前 3 天通知。\n\n离职当月在岗满 15 天的，按整月结算工资。\n\n## 八、绩效与调薪\n\n公司每年 1 月开展年度绩效考核，结果分为 S/A/B/C/D 五档。\n\n年度调薪与晋升依据考核结果确定；连续两年考核为 D 的进入绩效改进计划。\n\n## 九、培训与发展\n\n新员工入职后须完成入职培训；公司每年为员工提供不少于 40 学时的培训。\n\n员工可申请与岗位相关的内外部培训，费用按公司规定报销。\n\n## 十、奖励与纪律\n\n对公司有突出贡献的员工给予表彰和奖励；严重违反制度"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "，住宿按标准间安排；如需单间，须部门负责人审批。\n\n十一、报销凭证\n\n所有费用须提供真实有效的发票或凭证；凭证不齐全的，财务部有权退回。\n\n十二、交通意外处理\n\n出差途中发生交通意外，须第一时间联系公司行政部，并保留事故证明用于保险理赔。"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "finance-policy.md"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "30日"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "30日内提交报销",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "fin-003",
+      "category": "factual",
+      "difficulty": "L1",
+      "knowledge_base": "enterprise",
+      "question": "单笔采购 5000 元以下由谁审批？",
+      "answer": "单笔采购 5000 元以下由部门经理审批 [1]。",
+      "citations": [
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "部门经理与财务经理双签后支取。\n\n借款应在出差返回后 15 个工作日内报销核销，余额退还公司。\n\n逾期未核销的，暂停后续借款，并可在工资中据实抵扣。\n\n## 四、采购审批权限\n\n单笔 5000 元以下的采购由部门经理审批。\n\n5000 元（含）至 5 万元的采购由分管副总审批。\n\n5 万元（含）以上的采购由总经理审批，并须签订正式合同。\n\n## 五、预算管理\n\n各部门应在每年 11 月 30 日前提交下一年度费用预算；预算外支出须单独报总经理审批。\n\n## 六、附则\n\n本制度"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "，住宿按标准间安排；如需单间，须部门负责人审批。\n\n十一、报销凭证\n\n所有费用须提供真实有效的发票或凭证；凭证不齐全的，财务部有权退回。\n\n十二、交通意外处理\n\n出差途中发生交通意外，须第一时间联系公司行政部，并保留事故证明用于保险理赔。"
+        },
+        {
+          "filename": "it-policy.pdf",
+          "page_number": 3,
+          "chunk_index": 2,
+          "excerpt": "七、远程办公\n远程办公须经部门负责人审批，并使用公司配发的加密笔记本；禁止在网吧等公共场所处理公\n司业务。\n八、信息安全事件\n发生数据泄露或系统入侵等信息安全事件，须在 1 小时内上报 IT\n安全组，并保留现场证据，配合调查处置。"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "finance-policy.md"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "部门经理"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "5000元以下的采购由部门经理审批",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "fin-004",
+      "category": "factual",
+      "difficulty": "L1",
+      "knowledge_base": "enterprise",
+      "question": "出差借款需要在多长时间内核销？",
+      "answer": "出差借款应在出差返回后 15 个工作日内报销核销 [1][2]。",
+      "citations": [
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "部门经理与财务经理双签后支取。\n\n借款应在出差返回后 15 个工作日内报销核销，余额退还公司。\n\n逾期未核销的，暂停后续借款，并可在工资中据实抵扣。\n\n## 四、采购审批权限\n\n单笔 5000 元以下的采购由部门经理审批。\n\n5000 元（含）至 5 万元的采购由分管副总审批。\n\n5 万元（含）以上的采购由总经理审批，并须签订正式合同。\n\n## 五、预算管理\n\n各部门应在每年 11 月 30 日前提交下一年度费用预算；预算外支出须单独报总经理审批。\n\n## 六、附则\n\n本制度"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "，住宿按标准间安排；如需单间，须部门负责人审批。\n\n十一、报销凭证\n\n所有费用须提供真实有效的发票或凭证；凭证不齐全的，财务部有权退回。\n\n十二、交通意外处理\n\n出差途中发生交通意外，须第一时间联系公司行政部，并保留事故证明用于保险理赔。"
+        },
+        {
+          "filename": "it-policy.pdf",
+          "page_number": 3,
+          "chunk_index": 2,
+          "excerpt": "七、远程办公\n远程办公须经部门负责人审批，并使用公司配发的加密笔记本；禁止在网吧等公共场所处理公\n司业务。\n八、信息安全事件\n发生数据泄露或系统入侵等信息安全事件，须在 1 小时内上报 IT\n安全组，并保留现场证据，配合调查处置。"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "finance-policy.md"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "15个工作日"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "15个工作日内报销核销",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "fin-101",
+      "category": "factual",
+      "difficulty": "L2",
+      "knowledge_base": "enterprise",
+      "question": "去广州出差，住宿每晚最多能报销多少？",
+      "answer": "去广州出差，住宿每晚最多能报销600元[1]。",
+      "citations": [
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "，住宿按标准间安排；如需单间，须部门负责人审批。\n\n十一、报销凭证\n\n所有费用须提供真实有效的发票或凭证；凭证不齐全的，财务部有权退回。\n\n十二、交通意外处理\n\n出差途中发生交通意外，须第一时间联系公司行政部，并保留事故证明用于保险理赔。"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "部门经理与财务经理双签后支取。\n\n借款应在出差返回后 15 个工作日内报销核销，余额退还公司。\n\n逾期未核销的，暂停后续借款，并可在工资中据实抵扣。\n\n## 四、采购审批权限\n\n单笔 5000 元以下的采购由部门经理审批。\n\n5000 元（含）至 5 万元的采购由分管副总审批。\n\n5 万元（含）以上的采购由总经理审批，并须签订正式合同。\n\n## 五、预算管理\n\n各部门应在每年 11 月 30 日前提交下一年度费用预算；预算外支出须单独报总经理审批。\n\n## 六、附则\n\n本制度"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "用期提前 3 天通知。\n\n离职当月在岗满 15 天的，按整月结算工资。\n\n## 八、绩效与调薪\n\n公司每年 1 月开展年度绩效考核，结果分为 S/A/B/C/D 五档。\n\n年度调薪与晋升依据考核结果确定；连续两年考核为 D 的进入绩效改进计划。\n\n## 九、培训与发展\n\n新员工入职后须完成入职培训；公司每年为员工提供不少于 40 学时的培训。\n\n员工可申请与岗位相关的内外部培训，费用按公司规定报销。\n\n## 十、奖励与纪律\n\n对公司有突出贡献的员工给予表彰和奖励；严重违反制度"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "finance-policy.md"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "600元"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "上限600元/晚",
+      "chunk_hit": true,
+      "chunk_rank": 2,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "fin-102",
+      "category": "factual",
+      "difficulty": "L2",
+      "knowledge_base": "enterprise",
+      "question": "报销审批通过后，钱多久能打到工资卡？",
+      "answer": "报销款在审批完成后 5 个工作日内打款至员工工资卡 [2]。",
+      "citations": [
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "部门经理与财务经理双签后支取。\n\n借款应在出差返回后 15 个工作日内报销核销，余额退还公司。\n\n逾期未核销的，暂停后续借款，并可在工资中据实抵扣。\n\n## 四、采购审批权限\n\n单笔 5000 元以下的采购由部门经理审批。\n\n5000 元（含）至 5 万元的采购由分管副总审批。\n\n5 万元（含）以上的采购由总经理审批，并须签订正式合同。\n\n## 五、预算管理\n\n各部门应在每年 11 月 30 日前提交下一年度费用预算；预算外支出须单独报总经理审批。\n\n## 六、附则\n\n本制度"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "用期提前 3 天通知。\n\n离职当月在岗满 15 天的，按整月结算工资。\n\n## 八、绩效与调薪\n\n公司每年 1 月开展年度绩效考核，结果分为 S/A/B/C/D 五档。\n\n年度调薪与晋升依据考核结果确定；连续两年考核为 D 的进入绩效改进计划。\n\n## 九、培训与发展\n\n新员工入职后须完成入职培训；公司每年为员工提供不少于 40 学时的培训。\n\n员工可申请与岗位相关的内外部培训，费用按公司规定报销。\n\n## 十、奖励与纪律\n\n对公司有突出贡献的员工给予表彰和奖励；严重违反制度"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "finance-policy.md"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "5个工作日"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "5个工作日内打款",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "fin-103",
+      "category": "factual",
+      "difficulty": "L3",
+      "knowledge_base": "enterprise",
+      "question": "单笔采购 6 万元需要谁审批？",
+      "answer": "单笔采购 6 万元需要总经理审批，并须签订正式合同 [1]。",
+      "citations": [
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "部门经理与财务经理双签后支取。\n\n借款应在出差返回后 15 个工作日内报销核销，余额退还公司。\n\n逾期未核销的，暂停后续借款，并可在工资中据实抵扣。\n\n## 四、采购审批权限\n\n单笔 5000 元以下的采购由部门经理审批。\n\n5000 元（含）至 5 万元的采购由分管副总审批。\n\n5 万元（含）以上的采购由总经理审批，并须签订正式合同。\n\n## 五、预算管理\n\n各部门应在每年 11 月 30 日前提交下一年度费用预算；预算外支出须单独报总经理审批。\n\n## 六、附则\n\n本制度"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "，住宿按标准间安排；如需单间，须部门负责人审批。\n\n十一、报销凭证\n\n所有费用须提供真实有效的发票或凭证；凭证不齐全的，财务部有权退回。\n\n十二、交通意外处理\n\n出差途中发生交通意外，须第一时间联系公司行政部，并保留事故证明用于保险理赔。"
+        },
+        {
+          "filename": "it-policy.pdf",
+          "page_number": 3,
+          "chunk_index": 2,
+          "excerpt": "七、远程办公\n远程办公须经部门负责人审批，并使用公司配发的加密笔记本；禁止在网吧等公共场所处理公\n司业务。\n八、信息安全事件\n发生数据泄露或系统入侵等信息安全事件，须在 1 小时内上报 IT\n安全组，并保留现场证据，配合调查处置。"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "finance-policy.md"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "总经理"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "5万元（含）以上的采购由总经理审批",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "fin-104",
+      "category": "factual",
+      "difficulty": "L2",
+      "knowledge_base": "enterprise",
+      "question": "业务招待每人每次的报销标准是多少？",
+      "answer": "业务招待每人每次的报销标准是不超过 300 元 [1]。",
+      "citations": [
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "部门经理与财务经理双签后支取。\n\n借款应在出差返回后 15 个工作日内报销核销，余额退还公司。\n\n逾期未核销的，暂停后续借款，并可在工资中据实抵扣。\n\n## 四、采购审批权限\n\n单笔 5000 元以下的采购由部门经理审批。\n\n5000 元（含）至 5 万元的采购由分管副总审批。\n\n5 万元（含）以上的采购由总经理审批，并须签订正式合同。\n\n## 五、预算管理\n\n各部门应在每年 11 月 30 日前提交下一年度费用预算；预算外支出须单独报总经理审批。\n\n## 六、附则\n\n本制度"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "，住宿按标准间安排；如需单间，须部门负责人审批。\n\n十一、报销凭证\n\n所有费用须提供真实有效的发票或凭证；凭证不齐全的，财务部有权退回。\n\n十二、交通意外处理\n\n出差途中发生交通意外，须第一时间联系公司行政部，并保留事故证明用于保险理赔。"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "finance-policy.md"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "300元"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "人均不超过300元",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "fin-105",
+      "category": "factual",
+      "difficulty": "L3",
+      "knowledge_base": "enterprise",
+      "question": "单笔采购 3 万元由谁审批？",
+      "answer": "单笔采购 3 万元由分管副总审批 [1]。",
+      "citations": [
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "部门经理与财务经理双签后支取。\n\n借款应在出差返回后 15 个工作日内报销核销，余额退还公司。\n\n逾期未核销的，暂停后续借款，并可在工资中据实抵扣。\n\n## 四、采购审批权限\n\n单笔 5000 元以下的采购由部门经理审批。\n\n5000 元（含）至 5 万元的采购由分管副总审批。\n\n5 万元（含）以上的采购由总经理审批，并须签订正式合同。\n\n## 五、预算管理\n\n各部门应在每年 11 月 30 日前提交下一年度费用预算；预算外支出须单独报总经理审批。\n\n## 六、附则\n\n本制度"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "，住宿按标准间安排；如需单间，须部门负责人审批。\n\n十一、报销凭证\n\n所有费用须提供真实有效的发票或凭证；凭证不齐全的，财务部有权退回。\n\n十二、交通意外处理\n\n出差途中发生交通意外，须第一时间联系公司行政部，并保留事故证明用于保险理赔。"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "it-policy.pdf",
+          "page_number": 3,
+          "chunk_index": 2,
+          "excerpt": "七、远程办公\n远程办公须经部门负责人审批，并使用公司配发的加密笔记本；禁止在网吧等公共场所处理公\n司业务。\n八、信息安全事件\n发生数据泄露或系统入侵等信息安全事件，须在 1 小时内上报 IT\n安全组，并保留现场证据，配合调查处置。"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "finance-policy.md"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "分管副总"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "5000元（含）至5万元的采购由分管副总审批",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "fin-106",
+      "category": "factual",
+      "difficulty": "L3",
+      "knowledge_base": "enterprise",
+      "question": "一次业务招待总花费 2500 元，需要谁审批？",
+      "answer": "根据资料 [1]《财务管理制度（示例）》中“1.2 业务招待费”规定：  \n**“单次招待总额超过 2000 元的，须报分管副总审批。”**  \n\n本次业务招待总花费为 2500 元，超过 2000 元，因此需报**分管副总审批** [1]。",
+      "citations": [
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "，住宿按标准间安排；如需单间，须部门负责人审批。\n\n十一、报销凭证\n\n所有费用须提供真实有效的发票或凭证；凭证不齐全的，财务部有权退回。\n\n十二、交通意外处理\n\n出差途中发生交通意外，须第一时间联系公司行政部，并保留事故证明用于保险理赔。"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "部门经理与财务经理双签后支取。\n\n借款应在出差返回后 15 个工作日内报销核销，余额退还公司。\n\n逾期未核销的，暂停后续借款，并可在工资中据实抵扣。\n\n## 四、采购审批权限\n\n单笔 5000 元以下的采购由部门经理审批。\n\n5000 元（含）至 5 万元的采购由分管副总审批。\n\n5 万元（含）以上的采购由总经理审批，并须签订正式合同。\n\n## 五、预算管理\n\n各部门应在每年 11 月 30 日前提交下一年度费用预算；预算外支出须单独报总经理审批。\n\n## 六、附则\n\n本制度"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "it-policy.pdf",
+          "page_number": 3,
+          "chunk_index": 2,
+          "excerpt": "七、远程办公\n远程办公须经部门负责人审批，并使用公司配发的加密笔记本；禁止在网吧等公共场所处理公\n司业务。\n八、信息安全事件\n发生数据泄露或系统入侵等信息安全事件，须在 1 小时内上报 IT\n安全组，并保留现场证据，配合调查处置。"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "finance-policy.md"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "分管副总"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "总额超过2000元的，须报分管副总审批",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "fin-107",
+      "category": "factual",
+      "difficulty": "L2",
+      "knowledge_base": "enterprise",
+      "question": "出租车单次报销的上限是多少？",
+      "answer": "出租车单次报销的上限是 **80 元** [1]。",
+      "citations": [
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "部门经理与财务经理双签后支取。\n\n借款应在出差返回后 15 个工作日内报销核销，余额退还公司。\n\n逾期未核销的，暂停后续借款，并可在工资中据实抵扣。\n\n## 四、采购审批权限\n\n单笔 5000 元以下的采购由部门经理审批。\n\n5000 元（含）至 5 万元的采购由分管副总审批。\n\n5 万元（含）以上的采购由总经理审批，并须签订正式合同。\n\n## 五、预算管理\n\n各部门应在每年 11 月 30 日前提交下一年度费用预算；预算外支出须单独报总经理审批。\n\n## 六、附则\n\n本制度"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "，住宿按标准间安排；如需单间，须部门负责人审批。\n\n十一、报销凭证\n\n所有费用须提供真实有效的发票或凭证；凭证不齐全的，财务部有权退回。\n\n十二、交通意外处理\n\n出差途中发生交通意外，须第一时间联系公司行政部，并保留事故证明用于保险理赔。"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "finance-policy.md"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "80元"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "出租车单次不超过80元",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "fin-108",
+      "category": "factual",
+      "difficulty": "L1",
+      "knowledge_base": "enterprise",
+      "question": "部门经理每月的岗位话费补贴是多少？",
+      "answer": "部门经理每月的岗位话费补贴是100元[1]。",
+      "citations": [
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "部门经理与财务经理双签后支取。\n\n借款应在出差返回后 15 个工作日内报销核销，余额退还公司。\n\n逾期未核销的，暂停后续借款，并可在工资中据实抵扣。\n\n## 四、采购审批权限\n\n单笔 5000 元以下的采购由部门经理审批。\n\n5000 元（含）至 5 万元的采购由分管副总审批。\n\n5 万元（含）以上的采购由总经理审批，并须签订正式合同。\n\n## 五、预算管理\n\n各部门应在每年 11 月 30 日前提交下一年度费用预算；预算外支出须单独报总经理审批。\n\n## 六、附则\n\n本制度"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "用期提前 3 天通知。\n\n离职当月在岗满 15 天的，按整月结算工资。\n\n## 八、绩效与调薪\n\n公司每年 1 月开展年度绩效考核，结果分为 S/A/B/C/D 五档。\n\n年度调薪与晋升依据考核结果确定；连续两年考核为 D 的进入绩效改进计划。\n\n## 九、培训与发展\n\n新员工入职后须完成入职培训；公司每年为员工提供不少于 40 学时的培训。\n\n员工可申请与岗位相关的内外部培训，费用按公司规定报销。\n\n## 十、奖励与纪律\n\n对公司有突出贡献的员工给予表彰和奖励；严重违反制度"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "finance-policy.md"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "100元"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "部门经理每月100元",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "fin-109",
+      "category": "factual",
+      "difficulty": "L3",
+      "knowledge_base": "enterprise",
+      "question": "单次培训费超过多少需要人力资源部与财务部联合审批？",
+      "answer": "单次培训费超过 1 万元的，须报人力资源部与财务部联合审批 [1]。",
+      "citations": [
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "部门经理与财务经理双签后支取。\n\n借款应在出差返回后 15 个工作日内报销核销，余额退还公司。\n\n逾期未核销的，暂停后续借款，并可在工资中据实抵扣。\n\n## 四、采购审批权限\n\n单笔 5000 元以下的采购由部门经理审批。\n\n5000 元（含）至 5 万元的采购由分管副总审批。\n\n5 万元（含）以上的采购由总经理审批，并须签订正式合同。\n\n## 五、预算管理\n\n各部门应在每年 11 月 30 日前提交下一年度费用预算；预算外支出须单独报总经理审批。\n\n## 六、附则\n\n本制度"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "，住宿按标准间安排；如需单间，须部门负责人审批。\n\n十一、报销凭证\n\n所有费用须提供真实有效的发票或凭证；凭证不齐全的，财务部有权退回。\n\n十二、交通意外处理\n\n出差途中发生交通意外，须第一时间联系公司行政部，并保留事故证明用于保险理赔。"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "finance-policy.md"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "1万元"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "单次培训费超过1万元的",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "trv-001",
+      "category": "factual",
+      "difficulty": "L1",
+      "knowledge_base": "enterprise",
+      "question": "每天餐补合计不能超过多少？",
+      "answer": "每天餐补合计不能超过 100 元 [1]。",
+      "citations": [
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "部门经理与财务经理双签后支取。\n\n借款应在出差返回后 15 个工作日内报销核销，余额退还公司。\n\n逾期未核销的，暂停后续借款，并可在工资中据实抵扣。\n\n## 四、采购审批权限\n\n单笔 5000 元以下的采购由部门经理审批。\n\n5000 元（含）至 5 万元的采购由分管副总审批。\n\n5 万元（含）以上的采购由总经理审批，并须签订正式合同。\n\n## 五、预算管理\n\n各部门应在每年 11 月 30 日前提交下一年度费用预算；预算外支出须单独报总经理审批。\n\n## 六、附则\n\n本制度"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "用期提前 3 天通知。\n\n离职当月在岗满 15 天的，按整月结算工资。\n\n## 八、绩效与调薪\n\n公司每年 1 月开展年度绩效考核，结果分为 S/A/B/C/D 五档。\n\n年度调薪与晋升依据考核结果确定；连续两年考核为 D 的进入绩效改进计划。\n\n## 九、培训与发展\n\n新员工入职后须完成入职培训；公司每年为员工提供不少于 40 学时的培训。\n\n员工可申请与岗位相关的内外部培训，费用按公司规定报销。\n\n## 十、奖励与纪律\n\n对公司有突出贡献的员工给予表彰和奖励；严重违反制度"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "travel-policy.txt"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "100元"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "每日合计不超过100元",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "trv-002",
+      "category": "factual",
+      "difficulty": "L1",
+      "knowledge_base": "enterprise",
+      "question": "出差申请需要提前几个工作日提交？",
+      "answer": "出差须提前 3 个工作日在 OA 系统提交《出差申请单》[4]。",
+      "citations": [
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "部门经理与财务经理双签后支取。\n\n借款应在出差返回后 15 个工作日内报销核销，余额退还公司。\n\n逾期未核销的，暂停后续借款，并可在工资中据实抵扣。\n\n## 四、采购审批权限\n\n单笔 5000 元以下的采购由部门经理审批。\n\n5000 元（含）至 5 万元的采购由分管副总审批。\n\n5 万元（含）以上的采购由总经理审批，并须签订正式合同。\n\n## 五、预算管理\n\n各部门应在每年 11 月 30 日前提交下一年度费用预算；预算外支出须单独报总经理审批。\n\n## 六、附则\n\n本制度"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "用期提前 3 天通知。\n\n离职当月在岗满 15 天的，按整月结算工资。\n\n## 八、绩效与调薪\n\n公司每年 1 月开展年度绩效考核，结果分为 S/A/B/C/D 五档。\n\n年度调薪与晋升依据考核结果确定；连续两年考核为 D 的进入绩效改进计划。\n\n## 九、培训与发展\n\n新员工入职后须完成入职培训；公司每年为员工提供不少于 40 学时的培训。\n\n员工可申请与岗位相关的内外部培训，费用按公司规定报销。\n\n## 十、奖励与纪律\n\n对公司有突出贡献的员工给予表彰和奖励；严重违反制度"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "travel-policy.txt"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "3个工作日"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "提前3个工作日在OA系统",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "trv-003",
+      "category": "factual",
+      "difficulty": "L1",
+      "knowledge_base": "enterprise",
+      "question": "出差返回后多久内要提交报销？",
+      "answer": "出差返回后须在 **10 个工作日内** 提交报销 [1]。  \n（注：另一份资料中提到“费用发生后30日内提交报销”[3]，但针对差旅报销的专项规定明确为“出差返回后10个工作日内”，依据优先级，应以《差旅与报销细则》为准。）",
+      "citations": [
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "部门经理与财务经理双签后支取。\n\n借款应在出差返回后 15 个工作日内报销核销，余额退还公司。\n\n逾期未核销的，暂停后续借款，并可在工资中据实抵扣。\n\n## 四、采购审批权限\n\n单笔 5000 元以下的采购由部门经理审批。\n\n5000 元（含）至 5 万元的采购由分管副总审批。\n\n5 万元（含）以上的采购由总经理审批，并须签订正式合同。\n\n## 五、预算管理\n\n各部门应在每年 11 月 30 日前提交下一年度费用预算；预算外支出须单独报总经理审批。\n\n## 六、附则\n\n本制度"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "，住宿按标准间安排；如需单间，须部门负责人审批。\n\n十一、报销凭证\n\n所有费用须提供真实有效的发票或凭证；凭证不齐全的，财务部有权退回。\n\n十二、交通意外处理\n\n出差途中发生交通意外，须第一时间联系公司行政部，并保留事故证明用于保险理赔。"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "travel-policy.txt"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "10个工作日"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "10个工作日内提交报销",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "trv-101",
+      "category": "factual",
+      "difficulty": "L2",
+      "knowledge_base": "enterprise",
+      "question": "去北京出差，住宿每晚的上限是多少？",
+      "answer": "去北京出差，住宿每晚的上限是 600 元[1]。",
+      "citations": [
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "，住宿按标准间安排；如需单间，须部门负责人审批。\n\n十一、报销凭证\n\n所有费用须提供真实有效的发票或凭证；凭证不齐全的，财务部有权退回。\n\n十二、交通意外处理\n\n出差途中发生交通意外，须第一时间联系公司行政部，并保留事故证明用于保险理赔。"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "部门经理与财务经理双签后支取。\n\n借款应在出差返回后 15 个工作日内报销核销，余额退还公司。\n\n逾期未核销的，暂停后续借款，并可在工资中据实抵扣。\n\n## 四、采购审批权限\n\n单笔 5000 元以下的采购由部门经理审批。\n\n5000 元（含）至 5 万元的采购由分管副总审批。\n\n5 万元（含）以上的采购由总经理审批，并须签订正式合同。\n\n## 五、预算管理\n\n各部门应在每年 11 月 30 日前提交下一年度费用预算；预算外支出须单独报总经理审批。\n\n## 六、附则\n\n本制度"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "travel-policy.txt"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "600元"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "每晚上限600元",
+      "chunk_hit": true,
+      "chunk_rank": 2,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "trv-102",
+      "category": "factual",
+      "difficulty": "L1",
+      "knowledge_base": "enterprise",
+      "question": "午餐的餐补标准是多少？",
+      "answer": "午餐的餐补标准是40元[1]。",
+      "citations": [
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "部门经理与财务经理双签后支取。\n\n借款应在出差返回后 15 个工作日内报销核销，余额退还公司。\n\n逾期未核销的，暂停后续借款，并可在工资中据实抵扣。\n\n## 四、采购审批权限\n\n单笔 5000 元以下的采购由部门经理审批。\n\n5000 元（含）至 5 万元的采购由分管副总审批。\n\n5 万元（含）以上的采购由总经理审批，并须签订正式合同。\n\n## 五、预算管理\n\n各部门应在每年 11 月 30 日前提交下一年度费用预算；预算外支出须单独报总经理审批。\n\n## 六、附则\n\n本制度"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "用期提前 3 天通知。\n\n离职当月在岗满 15 天的，按整月结算工资。\n\n## 八、绩效与调薪\n\n公司每年 1 月开展年度绩效考核，结果分为 S/A/B/C/D 五档。\n\n年度调薪与晋升依据考核结果确定；连续两年考核为 D 的进入绩效改进计划。\n\n## 九、培训与发展\n\n新员工入职后须完成入职培训；公司每年为员工提供不少于 40 学时的培训。\n\n员工可申请与岗位相关的内外部培训，费用按公司规定报销。\n\n## 十、奖励与纪律\n\n对公司有突出贡献的员工给予表彰和奖励；严重违反制度"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "travel-policy.txt"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "40元"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "午餐40元",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "trv-103",
+      "category": "factual",
+      "difficulty": "L2",
+      "knowledge_base": "enterprise",
+      "question": "飞机单程飞行超过多久可以申请升舱？",
+      "answer": "飞机单程飞行时间超过 6 小时的，可申请升舱，须总经理审批 [1]。",
+      "citations": [
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "，住宿按标准间安排；如需单间，须部门负责人审批。\n\n十一、报销凭证\n\n所有费用须提供真实有效的发票或凭证；凭证不齐全的，财务部有权退回。\n\n十二、交通意外处理\n\n出差途中发生交通意外，须第一时间联系公司行政部，并保留事故证明用于保险理赔。"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "用期提前 3 天通知。\n\n离职当月在岗满 15 天的，按整月结算工资。\n\n## 八、绩效与调薪\n\n公司每年 1 月开展年度绩效考核，结果分为 S/A/B/C/D 五档。\n\n年度调薪与晋升依据考核结果确定；连续两年考核为 D 的进入绩效改进计划。\n\n## 九、培训与发展\n\n新员工入职后须完成入职培训；公司每年为员工提供不少于 40 学时的培训。\n\n员工可申请与岗位相关的内外部培训，费用按公司规定报销。\n\n## 十、奖励与纪律\n\n对公司有突出贡献的员工给予表彰和奖励；严重违反制度"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "travel-policy.txt"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "6小时"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "超过6小时",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "trv-104",
+      "category": "factual",
+      "difficulty": "L2",
+      "knowledge_base": "enterprise",
+      "question": "连续出差多长时间可以申请返程或调休？",
+      "answer": "连续出差超过 15 天的，每满 15 天可申请一次返程或调休 [7]。",
+      "citations": [
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "部门经理与财务经理双签后支取。\n\n借款应在出差返回后 15 个工作日内报销核销，余额退还公司。\n\n逾期未核销的，暂停后续借款，并可在工资中据实抵扣。\n\n## 四、采购审批权限\n\n单笔 5000 元以下的采购由部门经理审批。\n\n5000 元（含）至 5 万元的采购由分管副总审批。\n\n5 万元（含）以上的采购由总经理审批，并须签订正式合同。\n\n## 五、预算管理\n\n各部门应在每年 11 月 30 日前提交下一年度费用预算；预算外支出须单独报总经理审批。\n\n## 六、附则\n\n本制度"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "用期提前 3 天通知。\n\n离职当月在岗满 15 天的，按整月结算工资。\n\n## 八、绩效与调薪\n\n公司每年 1 月开展年度绩效考核，结果分为 S/A/B/C/D 五档。\n\n年度调薪与晋升依据考核结果确定；连续两年考核为 D 的进入绩效改进计划。\n\n## 九、培训与发展\n\n新员工入职后须完成入职培训；公司每年为员工提供不少于 40 学时的培训。\n\n员工可申请与岗位相关的内外部培训，费用按公司规定报销。\n\n## 十、奖励与纪律\n\n对公司有突出贡献的员工给予表彰和奖励；严重违反制度"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "travel-policy.txt"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "15天"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "连续出差超过15天",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "trv-105",
+      "category": "factual",
+      "difficulty": "L1",
+      "knowledge_base": "enterprise",
+      "question": "两人及以上同行出差，住宿怎么安排？",
+      "answer": "两人及以上同行出差，住宿按标准间安排；如需单间，须部门负责人审批 [1]。",
+      "citations": [
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "，住宿按标准间安排；如需单间，须部门负责人审批。\n\n十一、报销凭证\n\n所有费用须提供真实有效的发票或凭证；凭证不齐全的，财务部有权退回。\n\n十二、交通意外处理\n\n出差途中发生交通意外，须第一时间联系公司行政部，并保留事故证明用于保险理赔。"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "部门经理与财务经理双签后支取。\n\n借款应在出差返回后 15 个工作日内报销核销，余额退还公司。\n\n逾期未核销的，暂停后续借款，并可在工资中据实抵扣。\n\n## 四、采购审批权限\n\n单笔 5000 元以下的采购由部门经理审批。\n\n5000 元（含）至 5 万元的采购由分管副总审批。\n\n5 万元（含）以上的采购由总经理审批，并须签订正式合同。\n\n## 五、预算管理\n\n各部门应在每年 11 月 30 日前提交下一年度费用预算；预算外支出须单独报总经理审批。\n\n## 六、附则\n\n本制度"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "travel-policy.txt"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "标准间"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "住宿按标准间安排",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "trv-106",
+      "category": "factual",
+      "difficulty": "L2",
+      "knowledge_base": "enterprise",
+      "question": "境外出差费用按什么汇率折算报销？",
+      "answer": "境外出差费用按报销当日中国银行外汇牌价折算为人民币报销[8]。",
+      "citations": [
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "部门经理与财务经理双签后支取。\n\n借款应在出差返回后 15 个工作日内报销核销，余额退还公司。\n\n逾期未核销的，暂停后续借款，并可在工资中据实抵扣。\n\n## 四、采购审批权限\n\n单笔 5000 元以下的采购由部门经理审批。\n\n5000 元（含）至 5 万元的采购由分管副总审批。\n\n5 万元（含）以上的采购由总经理审批，并须签订正式合同。\n\n## 五、预算管理\n\n各部门应在每年 11 月 30 日前提交下一年度费用预算；预算外支出须单独报总经理审批。\n\n## 六、附则\n\n本制度"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "，住宿按标准间安排；如需单间，须部门负责人审批。\n\n十一、报销凭证\n\n所有费用须提供真实有效的发票或凭证；凭证不齐全的，财务部有权退回。\n\n十二、交通意外处理\n\n出差途中发生交通意外，须第一时间联系公司行政部，并保留事故证明用于保险理赔。"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "travel-policy.txt"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "中国银行"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "中国银行外汇牌价折算",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "it-001",
+      "category": "factual",
+      "difficulty": "L1",
+      "knowledge_base": "enterprise",
+      "question": "系统密码长度至少要求多少位？",
+      "answer": "系统密码长度至少要求10位[1]。",
+      "citations": [
+        {
+          "filename": "it-policy.pdf",
+          "page_number": 1,
+          "chunk_index": 0,
+          "excerpt": "IT 与办公设备管理制度\n一、设备申领\n新员工入职标配：笔记本电脑一台。主管及以上可申请外接显示器一台。设备由 IT\n部统一采购和登记，领用人签字确认。\n二、软件安装\n所有软件须通过 IT 部统一安装；禁止私自安装盗版或来源不明的软件。因工作需要的付费软件\n，由部门提申请，IT 部统一采购授权。\n三、账号与密码\n系统初始密码须在首次登录时修改；密码长度不少于 10\n位，须包含大写字母、小写字母、数字和特殊字符。密码每 90\n天更换一次；不得使用与上一个密码相同或高度相似的密码"
+        },
+        {
+          "filename": "it-policy.pdf",
+          "page_number": 3,
+          "chunk_index": 2,
+          "excerpt": "七、远程办公\n远程办公须经部门负责人审批，并使用公司配发的加密笔记本；禁止在网吧等公共场所处理公\n司业务。\n八、信息安全事件\n发生数据泄露或系统入侵等信息安全事件，须在 1 小时内上报 IT\n安全组，并保留现场证据，配合调查处置。"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        },
+        {
+          "filename": "it-policy.pdf",
+          "page_number": 2,
+          "chunk_index": 1,
+          "excerpt": "四、网络安全\n连接公共 Wi-Fi 时须使用公司\nVPN；禁止在未加密信道传输敏感数据。收到可疑邮件或链接，须及时上报 IT\n安全组，不得点击或转发。\n五、数据备份与保密\n重要文件须定期备份至公司网盘；严禁将含客户或员工信息的数据存放到个人设备或第三方云\n盘。\n六、设备归还\n离职员工须在 3 个工作日内将全部设备归还 IT\n部，并完成数据清除。设备丢失或人为损坏的，按设备残值赔偿。"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "it-policy.pdf"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "10位"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "密码长度不少于10位",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "it-002",
+      "category": "factual",
+      "difficulty": "L1",
+      "knowledge_base": "enterprise",
+      "question": "密码需要多长时间更换一次？",
+      "answer": "密码每 90 天更换一次 [1]。",
+      "citations": [
+        {
+          "filename": "it-policy.pdf",
+          "page_number": 1,
+          "chunk_index": 0,
+          "excerpt": "IT 与办公设备管理制度\n一、设备申领\n新员工入职标配：笔记本电脑一台。主管及以上可申请外接显示器一台。设备由 IT\n部统一采购和登记，领用人签字确认。\n二、软件安装\n所有软件须通过 IT 部统一安装；禁止私自安装盗版或来源不明的软件。因工作需要的付费软件\n，由部门提申请，IT 部统一采购授权。\n三、账号与密码\n系统初始密码须在首次登录时修改；密码长度不少于 10\n位，须包含大写字母、小写字母、数字和特殊字符。密码每 90\n天更换一次；不得使用与上一个密码相同或高度相似的密码"
+        },
+        {
+          "filename": "it-policy.pdf",
+          "page_number": 3,
+          "chunk_index": 2,
+          "excerpt": "七、远程办公\n远程办公须经部门负责人审批，并使用公司配发的加密笔记本；禁止在网吧等公共场所处理公\n司业务。\n八、信息安全事件\n发生数据泄露或系统入侵等信息安全事件，须在 1 小时内上报 IT\n安全组，并保留现场证据，配合调查处置。"
+        },
+        {
+          "filename": "it-policy.pdf",
+          "page_number": 2,
+          "chunk_index": 1,
+          "excerpt": "四、网络安全\n连接公共 Wi-Fi 时须使用公司\nVPN；禁止在未加密信道传输敏感数据。收到可疑邮件或链接，须及时上报 IT\n安全组，不得点击或转发。\n五、数据备份与保密\n重要文件须定期备份至公司网盘；严禁将含客户或员工信息的数据存放到个人设备或第三方云\n盘。\n六、设备归还\n离职员工须在 3 个工作日内将全部设备归还 IT\n部，并完成数据清除。设备丢失或人为损坏的，按设备残值赔偿。"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "it-policy.pdf"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "90天"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "密码每90天更换一次",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "it-003",
+      "category": "factual",
+      "difficulty": "L1",
+      "knowledge_base": "enterprise",
+      "question": "离职员工需要在多久内归还办公设备？",
+      "answer": "离职员工须在 3 个工作日内将全部设备归还 IT 部，并完成数据清除 [1]。",
+      "citations": [
+        {
+          "filename": "it-policy.pdf",
+          "page_number": 2,
+          "chunk_index": 1,
+          "excerpt": "四、网络安全\n连接公共 Wi-Fi 时须使用公司\nVPN；禁止在未加密信道传输敏感数据。收到可疑邮件或链接，须及时上报 IT\n安全组，不得点击或转发。\n五、数据备份与保密\n重要文件须定期备份至公司网盘；严禁将含客户或员工信息的数据存放到个人设备或第三方云\n盘。\n六、设备归还\n离职员工须在 3 个工作日内将全部设备归还 IT\n部，并完成数据清除。设备丢失或人为损坏的，按设备残值赔偿。"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "用期提前 3 天通知。\n\n离职当月在岗满 15 天的，按整月结算工资。\n\n## 八、绩效与调薪\n\n公司每年 1 月开展年度绩效考核，结果分为 S/A/B/C/D 五档。\n\n年度调薪与晋升依据考核结果确定；连续两年考核为 D 的进入绩效改进计划。\n\n## 九、培训与发展\n\n新员工入职后须完成入职培训；公司每年为员工提供不少于 40 学时的培训。\n\n员工可申请与岗位相关的内外部培训，费用按公司规定报销。\n\n## 十、奖励与纪律\n\n对公司有突出贡献的员工给予表彰和奖励；严重违反制度"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "部门经理与财务经理双签后支取。\n\n借款应在出差返回后 15 个工作日内报销核销，余额退还公司。\n\n逾期未核销的，暂停后续借款，并可在工资中据实抵扣。\n\n## 四、采购审批权限\n\n单笔 5000 元以下的采购由部门经理审批。\n\n5000 元（含）至 5 万元的采购由分管副总审批。\n\n5 万元（含）以上的采购由总经理审批，并须签订正式合同。\n\n## 五、预算管理\n\n各部门应在每年 11 月 30 日前提交下一年度费用预算；预算外支出须单独报总经理审批。\n\n## 六、附则\n\n本制度"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "it-policy.pdf"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "3个工作日"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "3个工作日内将全部设备归还",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "it-101",
+      "category": "factual",
+      "difficulty": "L2",
+      "knowledge_base": "enterprise",
+      "question": "主管级别可以额外申请什么办公设备？",
+      "answer": "主管级别可以额外申请外接显示器一台 [1]。",
+      "citations": [
+        {
+          "filename": "it-policy.pdf",
+          "page_number": 1,
+          "chunk_index": 0,
+          "excerpt": "IT 与办公设备管理制度\n一、设备申领\n新员工入职标配：笔记本电脑一台。主管及以上可申请外接显示器一台。设备由 IT\n部统一采购和登记，领用人签字确认。\n二、软件安装\n所有软件须通过 IT 部统一安装；禁止私自安装盗版或来源不明的软件。因工作需要的付费软件\n，由部门提申请，IT 部统一采购授权。\n三、账号与密码\n系统初始密码须在首次登录时修改；密码长度不少于 10\n位，须包含大写字母、小写字母、数字和特殊字符。密码每 90\n天更换一次；不得使用与上一个密码相同或高度相似的密码"
+        },
+        {
+          "filename": "it-policy.pdf",
+          "page_number": 3,
+          "chunk_index": 2,
+          "excerpt": "七、远程办公\n远程办公须经部门负责人审批，并使用公司配发的加密笔记本；禁止在网吧等公共场所处理公\n司业务。\n八、信息安全事件\n发生数据泄露或系统入侵等信息安全事件，须在 1 小时内上报 IT\n安全组，并保留现场证据，配合调查处置。"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "用期提前 3 天通知。\n\n离职当月在岗满 15 天的，按整月结算工资。\n\n## 八、绩效与调薪\n\n公司每年 1 月开展年度绩效考核，结果分为 S/A/B/C/D 五档。\n\n年度调薪与晋升依据考核结果确定；连续两年考核为 D 的进入绩效改进计划。\n\n## 九、培训与发展\n\n新员工入职后须完成入职培训；公司每年为员工提供不少于 40 学时的培训。\n\n员工可申请与岗位相关的内外部培训，费用按公司规定报销。\n\n## 十、奖励与纪律\n\n对公司有突出贡献的员工给予表彰和奖励；严重违反制度"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "it-policy.pdf"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "显示器"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "外接显示器",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "it-102",
+      "category": "factual",
+      "difficulty": "L1",
+      "knowledge_base": "enterprise",
+      "question": "连接公共 Wi-Fi 时公司要求必须使用什么？",
+      "answer": "公司要求连接公共 Wi-Fi 时必须使用公司 VPN [1]。",
+      "citations": [
+        {
+          "filename": "it-policy.pdf",
+          "page_number": 2,
+          "chunk_index": 1,
+          "excerpt": "四、网络安全\n连接公共 Wi-Fi 时须使用公司\nVPN；禁止在未加密信道传输敏感数据。收到可疑邮件或链接，须及时上报 IT\n安全组，不得点击或转发。\n五、数据备份与保密\n重要文件须定期备份至公司网盘；严禁将含客户或员工信息的数据存放到个人设备或第三方云\n盘。\n六、设备归还\n离职员工须在 3 个工作日内将全部设备归还 IT\n部，并完成数据清除。设备丢失或人为损坏的，按设备残值赔偿。"
+        },
+        {
+          "filename": "it-policy.pdf",
+          "page_number": 3,
+          "chunk_index": 2,
+          "excerpt": "七、远程办公\n远程办公须经部门负责人审批，并使用公司配发的加密笔记本；禁止在网吧等公共场所处理公\n司业务。\n八、信息安全事件\n发生数据泄露或系统入侵等信息安全事件，须在 1 小时内上报 IT\n安全组，并保留现场证据，配合调查处置。"
+        },
+        {
+          "filename": "it-policy.pdf",
+          "page_number": 1,
+          "chunk_index": 0,
+          "excerpt": "IT 与办公设备管理制度\n一、设备申领\n新员工入职标配：笔记本电脑一台。主管及以上可申请外接显示器一台。设备由 IT\n部统一采购和登记，领用人签字确认。\n二、软件安装\n所有软件须通过 IT 部统一安装；禁止私自安装盗版或来源不明的软件。因工作需要的付费软件\n，由部门提申请，IT 部统一采购授权。\n三、账号与密码\n系统初始密码须在首次登录时修改；密码长度不少于 10\n位，须包含大写字母、小写字母、数字和特殊字符。密码每 90\n天更换一次；不得使用与上一个密码相同或高度相似的密码"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "用期提前 3 天通知。\n\n离职当月在岗满 15 天的，按整月结算工资。\n\n## 八、绩效与调薪\n\n公司每年 1 月开展年度绩效考核，结果分为 S/A/B/C/D 五档。\n\n年度调薪与晋升依据考核结果确定；连续两年考核为 D 的进入绩效改进计划。\n\n## 九、培训与发展\n\n新员工入职后须完成入职培训；公司每年为员工提供不少于 40 学时的培训。\n\n员工可申请与岗位相关的内外部培训，费用按公司规定报销。\n\n## 十、奖励与纪律\n\n对公司有突出贡献的员工给予表彰和奖励；严重违反制度"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "it-policy.pdf"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "VPN"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "使用公司VPN",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "it-103",
+      "category": "factual",
+      "difficulty": "L2",
+      "knowledge_base": "enterprise",
+      "question": "设置密码时必须包含哪几类字符？",
+      "answer": "设置密码时必须包含以下四类字符：  \n- 大写字母  \n- 小写字母  \n- 数字  \n- 特殊字符  \n\n依据：密码长度不少于 10 位，须包含大写字母、小写字母、数字和特殊字符 [1]。",
+      "citations": [
+        {
+          "filename": "it-policy.pdf",
+          "page_number": 1,
+          "chunk_index": 0,
+          "excerpt": "IT 与办公设备管理制度\n一、设备申领\n新员工入职标配：笔记本电脑一台。主管及以上可申请外接显示器一台。设备由 IT\n部统一采购和登记，领用人签字确认。\n二、软件安装\n所有软件须通过 IT 部统一安装；禁止私自安装盗版或来源不明的软件。因工作需要的付费软件\n，由部门提申请，IT 部统一采购授权。\n三、账号与密码\n系统初始密码须在首次登录时修改；密码长度不少于 10\n位，须包含大写字母、小写字母、数字和特殊字符。密码每 90\n天更换一次；不得使用与上一个密码相同或高度相似的密码"
+        },
+        {
+          "filename": "it-policy.pdf",
+          "page_number": 3,
+          "chunk_index": 2,
+          "excerpt": "七、远程办公\n远程办公须经部门负责人审批，并使用公司配发的加密笔记本；禁止在网吧等公共场所处理公\n司业务。\n八、信息安全事件\n发生数据泄露或系统入侵等信息安全事件，须在 1 小时内上报 IT\n安全组，并保留现场证据，配合调查处置。"
+        },
+        {
+          "filename": "it-policy.pdf",
+          "page_number": 2,
+          "chunk_index": 1,
+          "excerpt": "四、网络安全\n连接公共 Wi-Fi 时须使用公司\nVPN；禁止在未加密信道传输敏感数据。收到可疑邮件或链接，须及时上报 IT\n安全组，不得点击或转发。\n五、数据备份与保密\n重要文件须定期备份至公司网盘；严禁将含客户或员工信息的数据存放到个人设备或第三方云\n盘。\n六、设备归还\n离职员工须在 3 个工作日内将全部设备归还 IT\n部，并完成数据清除。设备丢失或人为损坏的，按设备残值赔偿。"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "it-policy.pdf"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "特殊字符"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "大写字母、小写字母、数字和特殊字符",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "it-104",
+      "category": "factual",
+      "difficulty": "L1",
+      "knowledge_base": "enterprise",
+      "question": "发生数据泄露等信息安全事件，多久内要上报？",
+      "answer": "发生数据泄露等信息安全事件，须在1小时内上报IT安全组[1]。",
+      "citations": [
+        {
+          "filename": "it-policy.pdf",
+          "page_number": 3,
+          "chunk_index": 2,
+          "excerpt": "七、远程办公\n远程办公须经部门负责人审批，并使用公司配发的加密笔记本；禁止在网吧等公共场所处理公\n司业务。\n八、信息安全事件\n发生数据泄露或系统入侵等信息安全事件，须在 1 小时内上报 IT\n安全组，并保留现场证据，配合调查处置。"
+        },
+        {
+          "filename": "it-policy.pdf",
+          "page_number": 2,
+          "chunk_index": 1,
+          "excerpt": "四、网络安全\n连接公共 Wi-Fi 时须使用公司\nVPN；禁止在未加密信道传输敏感数据。收到可疑邮件或链接，须及时上报 IT\n安全组，不得点击或转发。\n五、数据备份与保密\n重要文件须定期备份至公司网盘；严禁将含客户或员工信息的数据存放到个人设备或第三方云\n盘。\n六、设备归还\n离职员工须在 3 个工作日内将全部设备归还 IT\n部，并完成数据清除。设备丢失或人为损坏的，按设备残值赔偿。"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "用期提前 3 天通知。\n\n离职当月在岗满 15 天的，按整月结算工资。\n\n## 八、绩效与调薪\n\n公司每年 1 月开展年度绩效考核，结果分为 S/A/B/C/D 五档。\n\n年度调薪与晋升依据考核结果确定；连续两年考核为 D 的进入绩效改进计划。\n\n## 九、培训与发展\n\n新员工入职后须完成入职培训；公司每年为员工提供不少于 40 学时的培训。\n\n员工可申请与岗位相关的内外部培训，费用按公司规定报销。\n\n## 十、奖励与纪律\n\n对公司有突出贡献的员工给予表彰和奖励；严重违反制度"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "it-policy.pdf"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "1小时"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "1小时内上报IT安全组",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "it-105",
+      "category": "factual",
+      "difficulty": "L2",
+      "knowledge_base": "enterprise",
+      "question": "远程办公需要经过谁审批？",
+      "answer": "远程办公须经部门负责人审批 [1]。",
+      "citations": [
+        {
+          "filename": "it-policy.pdf",
+          "page_number": 3,
+          "chunk_index": 2,
+          "excerpt": "七、远程办公\n远程办公须经部门负责人审批，并使用公司配发的加密笔记本；禁止在网吧等公共场所处理公\n司业务。\n八、信息安全事件\n发生数据泄露或系统入侵等信息安全事件，须在 1 小时内上报 IT\n安全组，并保留现场证据，配合调查处置。"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "，住宿按标准间安排；如需单间，须部门负责人审批。\n\n十一、报销凭证\n\n所有费用须提供真实有效的发票或凭证；凭证不齐全的，财务部有权退回。\n\n十二、交通意外处理\n\n出差途中发生交通意外，须第一时间联系公司行政部，并保留事故证明用于保险理赔。"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        }
+      ],
+      "is_no_answer": false,
+      "retrieval_hit": true,
+      "expected_sources": [
+        "it-policy.pdf"
+      ],
+      "fact_hit": true,
+      "fact_matched": [
+        "部门负责人"
+      ],
+      "fact_missing": [],
+      "no_answer_correct": null,
+      "expected_chunk": "远程办公须经部门负责人审批",
+      "chunk_hit": true,
+      "chunk_rank": 1,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "neg-001",
+      "category": "negative",
+      "difficulty": "L1",
+      "knowledge_base": "enterprise",
+      "question": "公司为员工提供宿舍吗？",
+      "answer": "知识库中未找到相关依据。",
+      "citations": [
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "，住宿按标准间安排；如需单间，须部门负责人审批。\n\n十一、报销凭证\n\n所有费用须提供真实有效的发票或凭证；凭证不齐全的，财务部有权退回。\n\n十二、交通意外处理\n\n出差途中发生交通意外，须第一时间联系公司行政部，并保留事故证明用于保险理赔。"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 1,
+          "excerpt": "用期提前 3 天通知。\n\n离职当月在岗满 15 天的，按整月结算工资。\n\n## 八、绩效与调薪\n\n公司每年 1 月开展年度绩效考核，结果分为 S/A/B/C/D 五档。\n\n年度调薪与晋升依据考核结果确定；连续两年考核为 D 的进入绩效改进计划。\n\n## 九、培训与发展\n\n新员工入职后须完成入职培训；公司每年为员工提供不少于 40 学时的培训。\n\n员工可申请与岗位相关的内外部培训，费用按公司规定报销。\n\n## 十、奖励与纪律\n\n对公司有突出贡献的员工给予表彰和奖励；严重违反制度"
+        },
+        {
+          "filename": "employee-handbook.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 员工手册（示例）\n\n## 一、年假\n\n员工累计工作满 1 年不满 10 年的，享受 5 天带薪年休假；满 10 年不满 20 年的，享受 10 天；满 20 年的，享受 15 天。\n\n年假须在当年休完，未休天数经部门负责人审批后可顺延至次年一季度使用。\n\n## 二、请假流程\n\n请假应至少提前一个工作日在系统中提交申请，由直属主管审批。紧急情况可先电话告知主管，并在恢复工作后补交申请。\n\n事假单次不得超过 5 个工作日，超过的须报部门负责人审批。\n\n## 三、病假\n\n病假须"
+        },
+        {
+          "filename": "travel-policy.txt",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "【差旅与报销细则】\n\n一、交通标准\n\n高铁、动车二等座实报实销；一等座须总监级及以上审批。\n飞机经济舱实报实销；单程飞行时间超过 6 小时的，可申请升舱，须总经理审批。\n市内交通优先公共交通；出租车单日累计不超过 100 元。\n\n二、住宿标准\n\n一线城市（北京、上海、广州、深圳）每晚上限 600 元，其他城市每晚上限 450 元，超标部分自理。\n\n三、餐补标准\n\n早餐 20 元、午餐 40 元、晚餐 40 元；每日合计不超过 100 元，凭票据报销。\n\n四、出差审批\n\n出差须"
+        },
+        {
+          "filename": "finance-policy.md",
+          "page_number": null,
+          "chunk_index": 0,
+          "excerpt": "# 财务管理制度（示例）\n\n## 一、费用报销范围与标准\n\n### 1.1 差旅费\n\n城市间交通：高铁二等座、动车二等座实报实销；飞机经济舱须事前审批。\n\n住宿费：一线城市（北京、上海、广州、深圳）上限 600 元/晚，其他城市上限 450 元/晚。\n\n市内交通：地铁、公交实报实销；出租车单次不超过 80 元，超出部分需书面说明原因。\n\n### 1.2 业务招待费\n\n业务招待须事前审批，单次人均不超过 300 元；单次招待总额超过 2000 元的，须报分管副总审批。\n\n###"
+        }
+      ],
+      "is_no_answer": true,
+      "retrieval_hit": null,
+      "expected_sources": [],
+      "fact_hit": null,
+      "fact_matched": [],
+      "fact_missing": [],
+      "no_answer_correct": true,
+      "expected_chunk": null,
+      "chunk_hit": null,
+      "chunk_rank": null,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "neg-002",
+      "category": "negative",
+      "difficulty": "L1",
+      "knowledge_base": "enterprise",
+      "question": "员工商业补充医疗保险的报销比例是多少？",
+      "answer": "知识库中未找到相关依据。",
+      "citations": [],
+      "is_no_answer": true,
+      "retrieval_hit": null,
+      "expected_sources": [],
+      "fact_hit": null,
+      "fact_matched": [],
+      "fact_missing": [],
+      "no_answer_correct": true,
+      "expected_chunk": null,
+      "chunk_hit": null,
+      "chunk_rank": null,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "neg-003",
+      "category": "negative",
+      "difficulty": "L1",
+      "knowledge_base": "enterprise",
+      "question": "公司有股票期权激励计划吗？",
+      "answer": "知识库中未找到相关依据。",
+      "citations": [],
+      "is_no_answer": true,
+      "retrieval_hit": null,
+      "expected_sources": [],
+      "fact_hit": null,
+      "fact_matched": [],
+      "fact_missing": [],
+      "no_answer_correct": true,
+      "expected_chunk": null,
+      "chunk_hit": null,
+      "chunk_rank": null,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "neg-004",
+      "category": "negative",
+      "difficulty": "L1",
+      "knowledge_base": "enterprise",
+      "question": "员工购车有哪些补贴政策？",
+      "answer": "知识库中未找到相关依据。",
+      "citations": [],
+      "is_no_answer": true,
+      "retrieval_hit": null,
+      "expected_sources": [],
+      "fact_hit": null,
+      "fact_matched": [],
+      "fact_missing": [],
+      "no_answer_correct": true,
+      "expected_chunk": null,
+      "chunk_hit": null,
+      "chunk_rank": null,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "neg-005",
+      "category": "negative",
+      "difficulty": "L1",
+      "knowledge_base": "enterprise",
+      "question": "公司团建活动经费标准是多少？",
+      "answer": "知识库中未找到相关依据。",
+      "citations": [],
+      "is_no_answer": true,
+      "retrieval_hit": null,
+      "expected_sources": [],
+      "fact_hit": null,
+      "fact_matched": [],
+      "fact_missing": [],
+      "no_answer_correct": true,
+      "expected_chunk": null,
+      "chunk_hit": null,
+      "chunk_rank": null,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "neg-006",
+      "category": "negative",
+      "difficulty": "L1",
+      "knowledge_base": "enterprise",
+      "question": "员工心理咨询服务怎么预约？",
+      "answer": "知识库中未找到相关依据。",
+      "citations": [],
+      "is_no_answer": true,
+      "retrieval_hit": null,
+      "expected_sources": [],
+      "fact_hit": null,
+      "fact_matched": [],
+      "fact_missing": [],
+      "no_answer_correct": true,
+      "expected_chunk": null,
+      "chunk_hit": null,
+      "chunk_rank": null,
+      "judge_score": null,
+      "judge_reason": null
+    },
+    {
+      "id": "neg-007",
+      "category": "negative",
+      "difficulty": "L1",
+      "knowledge_base": "enterprise",
+      "question": "员工子女教育补贴是多少？",
+      "answer": "知识库中未找到相关依据。",
+      "citations": [],
+      "is_no_answer": true,
+      "retrieval_hit": null,
+      "expected_sources": [],
+      "fact_hit": null,
+      "fact_matched": [],
+      "fact_missing": [],
+      "no_answer_correct": true,
+      "expected_chunk": null,
+      "chunk_hit": null,
+      "chunk_rank": null,
+      "judge_score": null,
+      "judge_reason": null
+    }
+  ]
+}
