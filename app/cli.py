@@ -16,12 +16,12 @@ from pathlib import Path
 import typer
 from sqlalchemy import select
 
-from app.auth.models import KnowledgeBaseAccess, User
-from app.database import SessionLocal, init_db
-from app.ingestion import ingest_file
-from app.models import KnowledgeBase
-from app.rag import ask
-from app.settings import get_provider
+from app.models.auth import KnowledgeBaseAccess, User
+from app.core.database import SessionLocal, init_db
+from app.services.ingestion import ingest_file
+from app.models.knowledge import KnowledgeBase
+from app.services.rag import ask
+from app.core.config import get_provider
 
 # 创建 Typer 应用，--help 会显示中文简介
 cli = typer.Typer(help="企业知识库助手命令行工具")
@@ -155,6 +155,43 @@ def list_users() -> None:
                 perms = "rw" if access.can_write else ("r" if access.can_read else "-")
                 grants.append(f"{name}({perms})")
             typer.echo(f"{user.username}  role={user.role}  active={user.is_active}  grants={', '.join(grants) or '-'}")
+
+
+@cli.command("retention")
+def retention_command() -> None:
+    """执行会话保留策略：自动归档长期不活跃会话，并永久删除过期归档会话。
+
+    阈值来自环境变量 CONVERSATION_ARCHIVE_DAYS / CONVERSATION_RETENTION_DAYS；
+    未配置（或 ≤0）的步骤会自动跳过。可挂到系统定时任务定期执行。
+    """
+    from app.services.conversation import apply_retention
+
+    init_db()
+    result = apply_retention()
+    typer.echo(
+        f"retention done: archived={result['archived']} deleted={result['deleted']} "
+        f"(archive_days={result['archive_days']}, retention_days={result['retention_days']})"
+    )
+
+
+@cli.command("eval")
+def eval_command(
+    eval_set: Path = typer.Option("eval/hr-eval.yaml", "--eval-set", help="评测集 YAML 文件路径"),
+    judge: bool = typer.Option(False, "--judge", help="启用 LLM 裁判做语义判分（额外消耗 API）"),
+    json_out: Path = typer.Option(None, "--json", help="将逐题结果写入 JSON 文件"),
+    markdown_out: Path = typer.Option(None, "--markdown", help="将报告写入 Markdown 文件"),
+) -> None:
+    """运行知识库问答评测集，输出检索命中 / 事实覆盖 / 拒答正确率。"""
+    from app.services.eval import load_eval_set, print_report, run_eval, summarize, write_json, write_markdown
+
+    kb_name, cases = load_eval_set(eval_set)
+    results = run_eval(kb_name, cases, get_provider(), get_provider(for_embeddings=True), judge=judge)
+    summary = summarize(results)
+    print_report(results, summary)
+    if json_out is not None:
+        write_json(json_out, results, summary)
+    if markdown_out is not None:
+        write_markdown(markdown_out, results, summary)
 
 
 if __name__ == "__main__":

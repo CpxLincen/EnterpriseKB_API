@@ -1,0 +1,322 @@
+# 真实企业制度文档评测集（知识库 real，5 篇真实制度）
+#
+# 文档清单（2026-09-09 入库，知识库 real）：
+#   XX公司无形资产管理办法.docx          （京咨发〔2026〕2号）
+#   XX公司业务合同管理规定.docx          （京咨发〔2026〕62号）
+#   XX公司员工对外授课管理办法（试行）.pdf（京咨发〔2025〕109号）
+#   XX公司员工奖惩管理办法.pdf            （京咨发〔2026〕19号）
+#   XX公司员工招聘.pdf                    （京咨发〔2026〕42号）
+#
+# 字段说明与 eval/README.md 一致：
+#   category  factual=事实型 / negative=无依据型
+#   difficulty L1=原文直问 / L2=同义改写 / L3=推理·档位边界·精确词面
+#   expected_sources / expected_facts / expected_chunk / reference_answer / expect_no_answer
+name: real-eval-v1
+knowledge_base: real
+cases:
+  # ============ 无形资产管理办法（DOCX）============
+  - id: ia-001
+    category: factual
+    difficulty: L1
+    question: 公司无形资产包括哪些？
+    expected_sources: [XX公司无形资产管理办法.docx]
+    expected_facts: ["软件", "专利权", "商标权", "非专利技术"]
+    expected_chunk: 没有实物形态的可辨认非货币性资产
+    reference_answer: 包括软件、专利权、著作权、土地使用权、商标权、数据资产、非专利技术等。
+
+  - id: ia-002
+    category: factual
+    difficulty: L1
+    question: 公司无形资产的牵头管理部门是哪个部门？
+    expected_sources: [XX公司无形资产管理办法.docx]
+    expected_facts: ["创新研发中心"]
+    expected_chunk: 创新研发中心是公司无形资产的牵头管理部门
+    reference_answer: 创新研发中心。
+
+  - id: ia-003
+    category: factual
+    difficulty: L1
+    question: 公司商标权由哪个部门归口管理？
+    expected_sources: [XX公司无形资产管理办法.docx]
+    expected_facts: ["法律合规部"]
+    expected_chunk: 法律合规部负责公司商标权的管理
+    reference_answer: 法律合规部。
+
+  - id: ia-004
+    category: factual
+    difficulty: L2
+    question: 土地使用权这块归哪个部门管？
+    expected_sources: [XX公司无形资产管理办法.docx]
+    expected_facts: ["后勤服务中心"]
+    expected_chunk: 后勤服务中心负责公司土地使用权的管理
+    reference_answer: 后勤服务中心。
+
+  - id: ia-005
+    category: factual
+    difficulty: L3
+    question: 公司转让和置换无形资产，经办部门应当先做什么？
+    expected_sources: [XX公司无形资产管理办法.docx]
+    expected_facts: ["专业评估机构", "评估"]
+    expected_chunk: 委托专业评估机构进行资产价值评估
+    reference_answer: 委托专业评估机构进行资产价值评估。
+
+  - id: ia-006
+    category: factual
+    difficulty: L3
+    question: 无形资产在哪些情形下应当报废？
+    expected_sources: [XX公司无形资产管理办法.docx]
+    expected_facts: ["报废"]
+    expected_chunk: 应作报废处理
+    reference_answer: 已被其他新技术替代且不能带来利益、不再受法律保护且不能带来利益、达到使用年限等情形应报废。
+
+  # ============ 业务合同管理规定（DOCX）============
+  - id: ct-001
+    category: factual
+    difficulty: L1
+    question: 公司的合同管控职责部门是哪个部门？
+    expected_sources: [XX公司业务合同管理规定.docx]
+    expected_facts: ["业务发展部"]
+    expected_chunk: 业务发展部作为公司合同管控职责部门
+    reference_answer: 业务发展部。
+
+  - id: ct-002
+    category: factual
+    difficulty: L3
+    question: 受托合同金额在 200 万元以上，由谁审批？
+    expected_sources: [XX公司业务合同管理规定.docx]
+    expected_facts: ["总经理"]
+    expected_chunk: 合同金额在200万元以上的，由公司总经理审批
+    reference_answer: 公司总经理审批。
+
+  - id: ct-003
+    category: factual
+    difficulty: L3
+    question: 受托合同金额在 100 万元（含）以下，由谁审批？
+    expected_sources: [XX公司业务合同管理规定.docx]
+    expected_facts: ["合同承办单位负责人"]
+    expected_chunk: 合同金额在100万元（含）以下的，由合同承办单位负责人审批
+    reference_answer: 由合同承办单位负责人审批，流程需汇报到分管领导。
+
+  - id: ct-004
+    category: factual
+    difficulty: L3
+    question: 受托合同金额在 100 万元到 200 万元（含）之间，由谁审批？
+    expected_sources: [XX公司业务合同管理规定.docx]
+    expected_facts: ["分管领导"]
+    expected_chunk: 由合同承办单位分管领导审批
+    reference_answer: 由合同承办单位分管领导审批。
+
+  - id: ct-005
+    category: factual
+    difficulty: L2
+    question: 一份合同文本多少页以上必须加盖骑缝章？
+    expected_sources: [XX公司业务合同管理规定.docx]
+    expected_facts: ["骑缝章"]
+    expected_chunk: 单份合同文本达二页及以上的须加盖骑缝章
+    reference_answer: 达二页及以上须加盖骑缝章。
+
+  - id: ct-006
+    category: factual
+    difficulty: L3
+    question: 根据履约情况，合同分为哪三大类？
+    expected_sources: [XX公司业务合同管理规定.docx]
+    expected_facts: ["正在履约", "履约完成", "已终止"]
+    expected_chunk: 将合同分为正在履约、履约完成和已终止三大类
+    reference_answer: 正在履约、履约完成和已终止三类。
+
+  - id: ct-007
+    category: factual
+    difficulty: L2
+    question: 收款经办人取得收款票据后，原则上应在多少个工作日内办理入账？
+    expected_sources: [XX公司业务合同管理规定.docx]
+    expected_facts: ["3个工作日"]
+    expected_chunk: 原则上3个工作日内
+    reference_answer: 3 个工作日内。
+
+  - id: ct-008
+    category: factual
+    difficulty: L1
+    question: 合同发生变更需要签订什么？
+    expected_sources: [XX公司业务合同管理规定.docx]
+    expected_facts: ["补充协议"]
+    expected_chunk: 合同变更需签订补充协议
+    reference_answer: 需签订补充协议。
+
+  # ============ 员工对外授课管理办法（PDF）============
+  - id: lt-001
+    category: factual
+    difficulty: L1
+    question: 员工对外授课工作的归口管理部门是哪个？
+    expected_sources: [XX公司员工对外授课管理办法（试行）.pdf]
+    expected_facts: ["人力资源部"]
+    expected_chunk: 人力资源部为员工对外授课工作的归口管理部门
+    reference_answer: 人力资源部。
+
+  - id: lt-002
+    category: factual
+    difficulty: L1
+    question: 公司员工对外授课分为哪两类？
+    expected_sources: [XX公司员工对外授课管理办法（试行）.pdf]
+    expected_facts: ["推荐授课", "应邀授课"]
+    expected_chunk: 公司推荐授课和员工应邀授课两类
+    reference_answer: 公司推荐授课和员工应邀授课两类。
+
+  - id: lt-003
+    category: factual
+    difficulty: L3
+    question: 中层及以上干部参与外部应邀授课，需要什么样的审批？
+    expected_sources: [XX公司员工对外授课管理办法（试行）.pdf]
+    expected_facts: ["双重审批"]
+    expected_chunk: 须经本单位分管领导、人力资源部分管领导双重审批
+    reference_answer: 须经本单位分管领导、人力资源部分管领导双重审批。
+
+  - id: lt-004
+    category: factual
+    difficulty: L2
+    question: 员工参与外部应邀授课获得的报酬归谁所有？
+    expected_sources: [XX公司员工对外授课管理办法（试行）.pdf]
+    expected_facts: ["员工个人"]
+    expected_chunk: 酬劳归员工个人所有
+    reference_answer: 归员工个人所有，由本人依法履行纳税义务。
+
+  - id: lt-005
+    category: factual
+    difficulty: L2
+    question: 普通员工想参与外部应邀授课，应该怎么做？
+    expected_sources: [XX公司员工对外授课管理办法（试行）.pdf]
+    expected_facts: ["申请", "审批"]
+    expected_chunk: 须提前提交申请
+    reference_answer: 须提前提交申请，经所在部门、子公司审批通过后方可开展。
+
+  # ============ 员工奖惩管理办法（PDF）============
+  - id: rp-001
+    category: factual
+    difficulty: L1
+    question: 公司员工奖励分为哪三类？
+    expected_sources: [XX公司员工奖惩管理办法.pdf]
+    expected_facts: ["表彰", "一次性绩效薪酬奖励", "特别奖励"]
+    expected_chunk: 奖励分为表彰、一次性绩效薪酬奖励、特别奖励
+    reference_answer: 表彰、一次性绩效薪酬奖励、特别奖励（岗位晋升）三类。
+
+  - id: rp-002
+    category: factual
+    difficulty: L1
+    question: 公司员工惩罚分为哪四个等级？
+    expected_sources: [XX公司员工奖惩管理办法.pdf]
+    expected_facts: ["轻微处罚", "一般处罚", "较大处罚", "重大处罚"]
+    expected_chunk: 惩罚分为轻微处罚、一般处罚、较大处罚、重大处罚四个等级
+    reference_answer: 轻微处罚、一般处罚、较大处罚、重大处罚四个等级。
+
+  - id: rp-003
+    category: factual
+    difficulty: L2
+    question: 员工对奖惩决定有异议，应在多少个工作日内提交申诉？
+    expected_sources: [XX公司员工奖惩管理办法.pdf]
+    expected_facts: ["5个工作日"]
+    expected_chunk: 之日起5个工作日内
+    reference_answer: 收到《员工奖惩通知单》之日起 5 个工作日内。
+
+  - id: rp-004
+    category: factual
+    difficulty: L1
+    question: 员工奖惩的日常管理部门是哪个部门？
+    expected_sources: [XX公司员工奖惩管理办法.pdf]
+    expected_facts: ["人力资源部"]
+    expected_chunk: 人力资源部为员工奖惩日常管理部门
+    reference_answer: 人力资源部。
+
+  - id: rp-005
+    category: factual
+    difficulty: L2
+    question: 公司的重大处罚主要指什么？
+    expected_sources: [XX公司员工奖惩管理办法.pdf]
+    expected_facts: ["解除劳动合同"]
+    expected_chunk: 重大处罚。主要为解除劳动合同
+    reference_answer: 主要为解除劳动合同。
+
+  # ============ 员工招聘、录用管理办法（PDF）============
+  - id: rc-001
+    category: factual
+    difficulty: L1
+    question: 公司员工招聘、录用坚持什么原则？
+    expected_sources: [XX公司员工招聘.pdf]
+    expected_facts: ["以岗定人", "公开招聘", "择优聘用"]
+    expected_chunk: 以岗定人、公开招聘、竞争上岗、择优聘用、合同管理
+    reference_answer: 以岗定人、公开招聘、竞争上岗、择优聘用、合同管理。
+
+  - id: rc-002
+    category: factual
+    difficulty: L1
+    question: 年度用人计划经哪个部门审核后报哪个会议批准？
+    expected_sources: [XX公司员工招聘.pdf]
+    expected_facts: ["人力资源部", "经理办公会"]
+    expected_chunk: 经人力资源部审核并报公司经理办公会批准
+    reference_answer: 经人力资源部审核并报公司经理办公会批准。
+
+  - id: rc-003
+    category: factual
+    difficulty: L2
+    question: 员工录用前，用人单位须了解拟录用员工哪方面的情况？
+    expected_sources: [XX公司员工招聘.pdf]
+    expected_facts: ["亲属关系"]
+    expected_chunk: 是否与公司现有员工存在亲属关系
+    reference_answer: 了解其是否与公司现有员工存在亲属关系。
+
+  - id: rc-004
+    category: factual
+    difficulty: L2
+    question: 公司按规定为新录用员工缴纳哪些项目？
+    expected_sources: [XX公司员工招聘.pdf]
+    expected_facts: ["社会保险", "住房公积金"]
+    expected_chunk: 缴纳社会保险和住房公积金
+    reference_answer: 社会保险和住房公积金。
+
+  - id: rc-005
+    category: factual
+    difficulty: L3
+    question: 拟录用人员经哪个会议审议同意后进行公示？
+    expected_sources: [XX公司员工招聘.pdf]
+    expected_facts: ["经理办公会"]
+    expected_chunk: 报公司经理办公会审议
+    reference_answer: 公司经理办公会审议同意后进行公示。
+
+  # ============ 无依据（应拒答，5 篇真实制度均未覆盖）============
+  - id: neg-001
+    category: negative
+    question: 员工每年可以享受几天带薪年假？
+    expect_no_answer: true
+
+  - id: neg-002
+    category: negative
+    question: 公司为员工提供宿舍吗？
+    expect_no_answer: true
+
+  - id: neg-003
+    category: negative
+    question: 员工商业补充医疗保险的报销比例是多少？
+    expect_no_answer: true
+
+  - id: neg-004
+    category: negative
+    question: 公司有股票期权激励计划吗？
+    expect_no_answer: true
+
+  - id: neg-005
+    category: negative
+    question: 员工购车有哪些补贴政策？
+    expect_no_answer: true
+
+  - id: neg-006
+    category: negative
+    question: 公司团建活动经费标准是多少？
+    expect_no_answer: true
+
+  - id: neg-007
+    category: negative
+    question: 员工心理咨询服务怎么预约？
+    expect_no_answer: true
+
+  - id: neg-008
+    category: negative
+    question: 员工子女教育补贴是多少？
+    expect_no_answer: true

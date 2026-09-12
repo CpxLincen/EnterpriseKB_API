@@ -11,3 +11,5 @@ python-dotenv>=1.2.2,<2.0
 pypdf>=6.10.2
 python-multipart>=0.0.12,<1.0
 PyJWT>=2.8,<3.0
+# Rerank（BGE 交叉编码器重排，可选；未安装时仅 rerank 功能不可用）
+FlagEmbedding>=1.2,<2.0

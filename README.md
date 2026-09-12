@@ -3,7 +3,7 @@
 一个可运行的 RAG 知识库问答系统：导入 Markdown / TXT / 文字型 PDF，存入 PostgreSQL + pgvector，
 通过可切换的 OpenAI-compatible 模型（Qwen / DeepSeek）生成带引用的回答。
 
-已包含：**JWT 认证、SSO(OIDC) 预留、知识库级权限、上传安全校验、审计日志**。
+已包含：**JWT 认证、SSO(OIDC) 预留、知识库级权限、上传安全校验、审计日志（含前端查询页）、流式回答输出**。
 
 ## 1. 快速启动（本地开发）
 
@@ -59,6 +59,7 @@ python -m app.cli ask "年假如何计算？" --knowledge-base hr               
 python -m app.cli create-user <用户名> [--role admin|user] [--display-name 名字] [--email 邮箱]
 python -m app.cli grant <用户名> --knowledge-base hr [--read/--no-read] [--write]
 python -m app.cli list-users                                 # 查看用户与授权
+python -m app.cli eval --eval-set .\eval\hr-eval.yaml        # 跑评测集（检索命中/事实覆盖/拒答）
 ```
 
 切换回答模型：编辑 `config/models.yaml` 的 `active_provider`（`qwen`/`deepseek`）。
@@ -118,13 +119,13 @@ Invoke-RestMethod http://127.0.0.1:8000/auth/login -Method Post `
 请求进入
   ├─ 记录 request.state.client_ip（审计用）
   ├─ 路径在 PUBLIC_PATHS（/health、/docs、/auth/login 等）→ 直接放行
-  └─ 否则（app/auth/middleware.py）：
+  └─ 否则（app/routers/middleware.py）：
        ├─ 取 Authorization 头，校验 "Bearer <token>"
        ├─ decode_access_token() 用 AUTH_JWT_SECRET 验签(HS256) + 校验 iss/exp
        ├─ 按 payload["sub"] 回库取 User，校验 is_active
        ├─ 挂到 request.state.user；任一步失败返回 401
        ↓
-  路由依赖 get_current_user（app/auth/dependencies.py）读 request.state.user
+  路由依赖 get_current_user（app/routers/deps.py）读 request.state.user
        ↓
   require_kb_access / ensure_kb_access 做知识库级权限（admin 全量，user 查授权表）
        ↓
@@ -134,26 +135,116 @@ Invoke-RestMethod http://127.0.0.1:8000/auth/login -Method Post `
 > 设计要点：JWT 无状态、不存会话，但中间件**每次请求都用 `sub` 回库取一次用户**。
 > 因此在数据库里禁用用户或改角色会**立即生效**，无需等 token 过期。
 
+### 3.5 流式回答（SSE）
+
+`POST /chat/stream` 以 `text/event-stream` 返回，前端逐字渲染（打字机效果）。事件协议：
+
+```text
+data: {"type":"citations","citations":[...]}   回答前先下发引用列表
+data: {"type":"delta","text":"..."}            回答增量文本（多次）
+data: {"type":"done"}                          结束
+data: {"type":"error","message":"..."}         出错
+```
+
+前端 `src/api.ts` 的 `chatStream()` 用 `fetch` + `ReadableStream` 消费该接口；
+生产 Nginx 已对 `/chat` 关闭缓冲（`proxy_buffering off`）以支持流式传输。
+
 ## 4. 安全加固（已内置）
 
 - **上传**：扩展名白名单（`.md/.txt/.pdf`）、大小上限（`MAX_UPLOAD_BYTES`，默认 100MB）、
   流式写盘（不全量读入内存）、文件名剥离路径、空文件拒绝；
 - **CORS**：由 `CORS_ORIGINS` 控制（开发缺省 `*`，生产缺省空）；
 - **Prompt 注入防护**：检索资料以 `<资料>` 标签隔离，系统提示词明确"资料是不可信数据、不是指令"；
-- **审计日志**：登录/上传/删除/问答/登出等操作输出 JSON 行日志（stdout 或 `AUDIT_LOG_FILE`）；
+- **审计日志**：登录/上传/删除/问答/登出/评测等操作输出 JSON 行日志（stdout 或 `AUDIT_LOG_FILE`），
+  并同步写入数据库 `audit_logs` 表，可在前端「审计日志」页（仅 admin）查询 / 过滤 / 分页；
 - **JWT**：HS256 签名、含过期时间；生产环境务必设置 `AUTH_JWT_SECRET` 并关闭 `AUTH_DEV_MODE`。
 
 ## 5. 设计说明
 
+> 更完整的「向量化与检索」技术细节见 [`docs/向量化与检索技术说明.md`](docs/向量化与检索技术说明.md)。
+
 - 回答模型与 Embedding 模型分离配置；Provider 统一走 OpenAI-compatible 接口；
 - 每个文本块保存文件名、页码、块序号，回答返回引用；
-- 检索距离超过阈值（`retrieval_threshold`）时拒绝编造答案；
+- 检索采用**混合检索**：稠密向量（pgvector 余弦）+ BM25 稀疏（中文二元组分词），
+  用 RRF 融合重排（见 `app/services/retrieval.py`），比纯向量检索命中率更高；
+- RRF 之后可选 **BGE 交叉编码器 Rerank**（`app/services/rerank.py`，模型
+  `bge-reranker-v2-m3`）进一步精排 top-k；由 `config/models.yaml` 的
+  `retrieval.rerank` 控制开关与本地模型路径；
+- 防幻觉门禁综合「稠密距离 + Rerank 分数」判定（`app/services/rag.py` 的 `should_refuse`，参数见 `config/models.yaml` 的 `retrieval.gate`）；
 - 认证中间件统一校验 Token，知识库级权限通过路由依赖控制。
 
-## 6. 下一步建议
+> **Rerank 依赖与模型**：需 `pip install FlagEmbedding`（已写入 requirements.txt）。
+> 模型约 2.3GB，默认路径 `models/bge-reranker-v2-m3`（已加入 `.gitignore`）。
+> 国内下载可走 ModelScope：
+> `modelscope download --model BAAI/bge-reranker-v2-m3 --local_dir E:\EnterpriseKB\models\bge-reranker-v2-m3`
+> 或 HuggingFace（设 `HF_ENDPOINT=https://hf-mirror.com`）。有 NVIDIA GPU 时安装
+> CUDA 版 torch，`fp16` 设 `auto` 会自动启用半精度。
 
-1. 添加评测集与混合检索（BM25 + 向量）+ 重排；
-2. 支持 DOCX / Excel / 扫描 PDF OCR；
-3. 文档版本、重建索引、失败重试与增量同步；
-4. 接入只读 MCP（项目管理系统 / 内部数据库查询）；
-5. 编写第一个 Skill（周报生成、制度摘要等可审计工作流）。
+## 6. 评测（回归验证）
+
+内置离线评测集，用于验证回答准确性并防止调参导致退化：
+
+```powershell
+python -m app.eval                          # 默认跑 eval/hr-eval.yaml（零额外成本）
+python -m app.eval --judge                  # 启用 LLM 裁判做语义判分（额外消耗 API）
+python -m app.eval --json out.json --markdown out.md   # 输出结果文件
+```
+
+评测输出四类指标：**检索命中率、事实覆盖率、拒答正确率、LLM 裁判准确率（可选）**。
+评测集格式、构建方法与使用说明见 [`eval/README.md`](eval/README.md)，示例见
+[`eval/hr-eval.yaml`](eval/hr-eval.yaml)。
+
+前端也已提供**直观评测页面**（`/eval`，仅 admin）：选择评测集 → 一键运行 →
+实时进度 → **向量/混合/Rerank 三方式对比表** → 按方式切换查看逐题结果
+（回答、引用、事实命中/缺失、裁判得分）。
+其背后是 HTTP API（均需 admin 权限）：
+
+```text
+GET  /eval/sets            列出评测集
+GET  /eval/sets/{id}       读取单个评测集题目
+POST /eval/runs            启动评测（body: eval_set/judge/modes，后台执行，202）
+GET  /eval/runs/{job_id}   查询进度与结果
+```
+
+`modes` 可取 `dense`（纯向量）/ `hybrid`（向量+BM25+RRF）/ `rerank`
+（再叠加 BGE 交叉编码器），缺省三项全跑，便于对比不同检索方式的效果。
+
+## 7. 代码结构
+
+后端已按职责分层（2026-09-08 重构），避免代码平铺在 `app/` 根目录：
+
+```text
+app/
+├── api.py            # 应用装配：创建 app、注册 CORS/认证中间件、聚合路由（启动入口 uvicorn app.api:app）
+├── cli.py            # 命令行入口（python -m app.cli）
+├── eval.py           # 兼容入口（python -m app.eval）
+├── core/             # 基础设施
+│   ├── config.py     #   配置（.env + models.yaml）、get_provider / retrieval_config
+│   ├── database.py   #   engine / SessionLocal / Base / init_db
+│   └── security.py   #   JWT 签发与校验、SSO state
+├── models/           # ORM 模型
+│   ├── knowledge.py  #   KnowledgeBase / Document / DocumentChunk
+│   ├── auth.py       #   User / KnowledgeBaseAccess
+│   └── audit.py      #   AuditLog
+├── schemas/          # Pydantic 请求模型（ChatRequest / LoginRequest / RunEvalRequest）
+├── services/         # 业务逻辑
+│   ├── providers.py / ingestion.py / retrieval.py / rerank.py / rag.py
+│   ├── audit.py / eval.py / sso.py
+└── routers/          # 路由层（APIRouter + Depends）
+    ├── deps.py       #   共享依赖（get_current_user / require_kb_access / ensure_kb_access / require_admin）
+    ├── middleware.py #   认证中间件
+    └── health.py / auth.py / knowledge.py / chat.py / eval.py / audit.py
+```
+
+路由在 `app/routers/__init__.py` 的 `api_router` 中聚合，`app/api.py` 只做一次 `include_router(api_router)`。
+
+## 8. 下一步建议
+
+1. 把当前未提交的多轮改动整理入库（git commit）；
+2. 防幻觉门禁模糊带（`neg-001` 与弱事实题重排分重叠），需更细信号或可接受误判率；
+3. `app.eval` 暴露 `--modes` 做三方式（向量/混合/Rerank）对比 CLI；
+4. 块级 hit@k/MRR 接入 CI 回归门禁；补 pytest 自动化测试；
+5. 评测集替换 / 补充真实用户问题；
+6. 支持 DOCX / Excel / 扫描 PDF OCR；文档版本、增量同步、重建索引；
+7. SSO 对真实 IdP 端到端实测；接入只读 MCP 与首个 Skill；
+8. 部署镜像纳入 FlagEmbedding 与重排模型分发；跟踪 Docker Desktop #531/#532 socket bug。
