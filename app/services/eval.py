@@ -21,6 +21,7 @@ import argparse
 import json
 import re
 import sys
+import unicodedata
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Callable
@@ -115,8 +116,13 @@ def load_eval_set(path: Path) -> tuple[str, list[EvalCase]]:
 
 
 def _normalize(text: str) -> str:
-    """去除全部空白并转小写，便于子串匹配（如 “5 天” 与 “5天” 视为一致）。"""
-    return re.sub(r"\s+", "", text).lower()
+    """去除全部空白、转小写，并做 NFKC 归一化，便于子串匹配。
+
+    入库侧（app/services/ingestion.py 的 normalize_text）会把文本 NFKC 归一化，
+    因此全角标点（如 “，” “（）”）在库里已变成半角。这里同样做 NFKC，
+    保证 expected_chunk / expected_facts 与已入库文本在相同规则下比较。
+    """
+    return unicodedata.normalize("NFKC", re.sub(r"\s+", "", text)).lower()
 
 
 def _fact_matching(answer: str, facts: list[str]) -> tuple[list[str], list[str]]:

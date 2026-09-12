@@ -14,6 +14,8 @@ from __future__ import annotations
 
 import hashlib
 import re
+import unicodedata
+import zipfile
 from pathlib import Path
 
 from pypdf import PdfReader  # 用于提取文字型 PDF 的文本
@@ -26,10 +28,77 @@ from app.services.retrieval import invalidate
 from app.core.config import ProviderConfig
 
 
+# 部分中文 PDF 内嵌字体的 ToUnicode 映射会把汉字映到 CJK Radicals Supplement
+# （U+2E80–U+2EFF）的偏旁形式（如 ⻔=门、⻅=见、⺠=民），NFKC 不会折叠这一块。
+# 这里补充一张“偏旁形式 -> 规范简体字”的映射，避免检索时词面/向量被偏旁字符拖累。
+# 仅收录高置信度的简化偏旁（出现于本项目真实文档的 6 个 + 常见简化偏旁）。
+_CJK_RADICAL_SUPPLEMENT_MAP = {
+    "\u2ea0": "\u6c11",  # ⺠ -> 民
+    "\u2ec5": "\u89c1",  # ⻅ -> 见
+    "\u2ecb": "\u8f66",  # ⻋ -> 车
+    "\u2ed0": "\u9485",  # ⻐ -> 钅
+    "\u2ed3": "\u957f",  # ⻓ -> 长
+    "\u2ed1": "\u957f",  # ⻑ -> 长
+    "\u2ed4": "\u95e8",  # ⻔ -> 门
+    "\u2ed7": "\u96e8",  # ⻗ -> 雨
+    "\u2ed8": "\u9752",  # ⻘ -> 青
+    "\u2ed9": "\u97e6",  # ⻙ -> 韦
+    "\u2eda": "\u9875",  # ⻚ -> 页
+    "\u2edb": "\u98ce",  # ⻛ -> 风
+    "\u2edc": "\u98de",  # ⻜ -> 飞
+    "\u2ee2": "\u9a6c",  # ⻢ -> 马
+    "\u2ee3": "\u9aa8",  # ⻣ -> 骨
+    "\u2ee5": "\u9c7c",  # ⻥ -> 鱼
+    "\u2ee6": "\u9e1f",  # ⻦ -> 鸟
+    "\u2eeb": "\u9f50",  # ⻫ -> 齐
+    "\u2eef": "\u9f99",  # ⻯ -> 龙
+    "\u2ef0": "\u9f99",  # ⻰ -> 龙
+    "\u2ef3": "\u9f9f",  # ⻳ -> 龟
+}
+
+
+def normalize_text(text: str) -> str:
+    """把提取出的文本规范化，修复中文 PDF 的偏旁/兼容字符问题。
+
+    1. NFKC：折叠康煕部首（U+2F00–U+2FDF，如 ⼯→工、⾏→行）与全角/兼容形式；
+    2. 补充映射：折叠 NFKC 不处理的 CJK Radicals Supplement（U+2E80–U+2EFF）。
+    3. 清理提取残留的 C0 控制字符（如 PDF 提取常带的 \\x01），统一替换为空格，
+       避免相邻词被错误粘连。
+    """
+    text = unicodedata.normalize("NFKC", text or "")
+    text = text.translate(str.maketrans(_CJK_RADICAL_SUPPLEMENT_MAP))
+    return re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f]", " ", text)
+
+
+def read_docx(path: Path) -> list[tuple[str, int | None]]:
+    """读取 .docx（OOXML）正文文本，按段落返回，无页码。
+
+    不引入 python-docx，直接解包 word/document.xml 并按 <w:p> 段落切分，
+    每个段落内拼接全部 <w:t> 文本；表格单元格内的段落（<w:tc> 内嵌 <w:p>）
+    也会被一并捕获。
+    """
+    try:
+        with zipfile.ZipFile(path) as zf:
+            xml = zf.read("word/document.xml").decode("utf-8", "ignore")
+    except (zipfile.BadZipFile, KeyError) as exc:
+        raise ValueError(f"Cannot parse '{path.name}' as a .docx file.") from exc
+    paragraphs: list[str] = []
+    for para in re.findall(r"<w:p[ >].*?</w:p>", xml, re.S):
+        # 制表符与换行符按原意还原，便于后续切块与阅读
+        para = re.sub(r"<w:tab[^>]*/>", " ", para)
+        para = re.sub(r"<w:br[^>]*/>", "\n", para)
+        runs = re.findall(r"<w:t[^>]*>(.*?)</w:t>", para, re.S)
+        line = "".join(runs).strip()
+        if line:
+            paragraphs.append(line)
+    return [(normalize_text("\n".join(paragraphs)), None)]
+
+
 def read_document(path: Path) -> list[tuple[str, int | None]]:
     """读取文档，返回 (文本, 页码) 列表。
 
     - PDF：逐页提取文本，页码从 1 开始；页面无文字时提取为空字符串。
+    - DOCX：解包 word/document.xml 提取段落，整篇文本、页码为 None。
     - Markdown / TXT：整篇读取，页码为 None。
 
     参数:
@@ -39,17 +108,23 @@ def read_document(path: Path) -> list[tuple[str, int | None]]:
     """
     # PDF：逐页提取文本，并记录页码
     if path.suffix.lower() == ".pdf":
-        return [(page.extract_text() or "", index + 1) for index, page in enumerate(PdfReader(path).pages)]
-    # 其他类型：MVP 阶段仅支持 .md / .txt
+        return [
+            (normalize_text(page.extract_text() or ""), index + 1)
+            for index, page in enumerate(PdfReader(path).pages)
+        ]
+    # DOCX：解包提取段落文本（页码为 None）
+    if path.suffix.lower() == ".docx":
+        return read_docx(path)
+    # 其他类型：仅支持 .md / .txt
     if path.suffix.lower() not in {".md", ".txt"}:
-        raise ValueError("Only .md, .txt, and text-based .pdf files are supported in this MVP.")
+        raise ValueError("Only .md, .txt, .docx, and text-based .pdf files are supported.")
     # Markdown / TXT：优先按 UTF-8 读取；失败时降级到 GB18030（兼容中文
     # Windows 常见的 GBK/GB2312 编码）；两种编码都无法解析时给出明确错误。
     try:
-        return [(path.read_text(encoding="utf-8"), None)]
+        return [(normalize_text(path.read_text(encoding="utf-8")), None)]
     except UnicodeDecodeError:
         try:
-            return [(path.read_text(encoding="gb18030"), None)]
+            return [(normalize_text(path.read_text(encoding="gb18030")), None)]
         except UnicodeDecodeError as exc:
             raise ValueError(
                 f"Cannot decode '{path.name}' as UTF-8 or GB18030; convert it to UTF-8 and retry."

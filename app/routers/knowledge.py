@@ -18,7 +18,7 @@ from app.services.retrieval import invalidate
 router = APIRouter(prefix="/knowledge-bases", tags=["knowledge"])
 
 # 允许上传的文档扩展名（白名单）
-ALLOWED_SUFFIXES = {".md", ".txt", ".pdf"}
+ALLOWED_SUFFIXES = {".md", ".txt", ".docx", ".pdf"}
 
 
 @router.get("")
@@ -83,7 +83,7 @@ async def upload_document(
     filename = Path(file.filename or "document.txt").name
     suffix = Path(filename).suffix.lower()
     if suffix not in ALLOWED_SUFFIXES:
-        raise HTTPException(status_code=400, detail=f"Unsupported file type '{suffix}'. Allowed: .md, .txt, .pdf")
+        raise HTTPException(status_code=400, detail=f"Unsupported file type '{suffix}'. Allowed: .md, .txt, .docx, .pdf")
     # 流式写入临时文件并限制大小，避免大文件一次性读入内存
     limit = max_upload_bytes()
     path: Path | None = None

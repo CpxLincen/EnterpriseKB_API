@@ -87,3 +87,47 @@ def require_admin(user: User = Depends(get_current_user)) -> User:
     if user.role != "admin":
         raise HTTPException(status_code=403, detail="需要管理员权限。")
     return user
+
+
+def readable_knowledge_bases(user: User) -> list[str]:
+    """返回当前用户有读权限的全部知识库名（admin 返回全部）。"""
+    with SessionLocal() as session:
+        if user.role == "admin":
+            return list(session.scalars(select(KnowledgeBase.name).order_by(KnowledgeBase.name)).all())
+        rows = (
+            session.execute(
+                select(KnowledgeBase.name)
+                .join(KnowledgeBaseAccess, KnowledgeBaseAccess.knowledge_base_id == KnowledgeBase.id)
+                .where(KnowledgeBaseAccess.user_id == user.id, KnowledgeBaseAccess.can_read.is_(True))
+                .order_by(KnowledgeBase.name)
+            )
+            .scalars()
+            .all()
+        )
+        return list(rows)
+
+
+def resolve_kb_names(
+    user: User,
+    requested: str | None,
+    fallback: str | None = None,
+) -> tuple[str | None, list[str] | None]:
+    """把「用户指定的知识库」解析为检索目标。
+
+    返回 (kb_name, kb_names) 二选一：
+    - (库名, None)        → 指定了具体知识库（或沿用会话已绑定的库）；
+    - (None, [库名...])   → 自动路由：检索当前用户全部可读知识库。
+
+    requested 为 "auto" 或空（且无 fallback）时走自动路由；权限校验仍按现有逻辑。
+    """
+    req = (requested or "").strip()
+    if req and req != "auto":
+        ensure_kb_access(user, req, write=False)
+        return req, None
+    if not req and fallback:
+        ensure_kb_access(user, fallback, write=False)
+        return fallback, None
+    names = readable_knowledge_bases(user)
+    if not names:
+        raise HTTPException(status_code=400, detail="当前用户没有可读的知识库，无法自动路由。")
+    return None, names

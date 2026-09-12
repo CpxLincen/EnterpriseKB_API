@@ -2,12 +2,14 @@
 
 from fastapi import APIRouter
 
-from app.routers import audit, auth, chat, eval, health, knowledge
+from app.routers import audit, auth, chat, conversations, eval, health, knowledge, review
 
 api_router = APIRouter()
 api_router.include_router(health.router)
 api_router.include_router(auth.router)
 api_router.include_router(knowledge.router)
 api_router.include_router(chat.router)
+api_router.include_router(conversations.router)
 api_router.include_router(eval.router)
 api_router.include_router(audit.router)
+api_router.include_router(review.router)

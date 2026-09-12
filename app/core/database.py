@@ -39,10 +39,25 @@ def init_db() -> None:
     """初始化数据库：启用 pgvector 扩展并创建全部数据表（若不存在）。"""
     from app.models import audit as audit_models  # noqa: F401  # 审计日志表
     from app.models import auth as auth_models  # noqa: F401  # 认证表（users / knowledge_base_access）
+    from app.models import conversation as conversation_models  # noqa: F401  # 会话/消息表
     from app.models import knowledge as knowledge_models  # noqa: F401  # 知识库/文档/文本块表
+    from app.models import review as review_models  # noqa: F401  # 人工复核表
 
     with engine.begin() as connection:
         # 启用 pgvector 扩展（幂等操作，已存在则跳过）
         connection.exec_driver_sql("CREATE EXTENSION IF NOT EXISTS vector")
     # 依据所有继承 Base 的模型创建缺失的数据表
     Base.metadata.create_all(engine)
+    # 轻量迁移：create_all 不会给「已存在的表」新增列。这里幂等补齐
+    # conversations 表后续新增的生命周期字段（status / archived_at）与索引，
+    # 避免因直接改模型而导致旧库缺列报错。新库由 create_all 直接建好，此处为空操作。
+    with engine.begin() as connection:
+        connection.exec_driver_sql(
+            "ALTER TABLE conversations ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'active'"
+        )
+        connection.exec_driver_sql(
+            "ALTER TABLE conversations ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ NULL"
+        )
+        connection.exec_driver_sql(
+            "CREATE INDEX IF NOT EXISTS ix_conversations_status ON conversations (status)"
+        )

@@ -8,11 +8,11 @@ from fastapi.responses import StreamingResponse
 from app.core.config import get_provider
 from app.core.database import SessionLocal
 from app.models.auth import User
-from app.routers.deps import ensure_kb_access, get_current_user
+from app.routers.deps import get_current_user, resolve_kb_names
 from app.schemas import ChatRequest
 from app.services.audit import log_event
-from app.services.providers import OpenAICompatibleProvider
-from app.services.rag import SYSTEM_PROMPT, ask, build_user_prompt, retrieve_context
+from app.services.rag import ask, iter_answer_events
+from app.services.review import enqueue_review
 
 router = APIRouter(tags=["chat"])
 
@@ -24,25 +24,36 @@ def _sse(payload: dict) -> str:
 
 @router.post("/chat")
 def chat(request: ChatRequest, http_request: Request, user: User = Depends(get_current_user)) -> dict:
-    """执行 RAG 问答，返回回答文本与引用列表（需读权限）。"""
-    ensure_kb_access(user, request.knowledge_base, write=False)
+    """执行 RAG 问答，返回回答文本与引用列表（未指定知识库时自动路由）。"""
+    kb_name, kb_names = resolve_kb_names(user, request.knowledge_base)
     try:
         with SessionLocal() as session:
-            answer, citations = ask(
+            answer, citations, decision = ask(
                 session,
                 request.question,
-                request.knowledge_base,
+                kb_name,
                 get_provider(),
                 get_provider(for_embeddings=True),
+                return_decision=True,
+                kb_names=kb_names,
             )
         log_event(
             "chat",
             user=user.username,
             ip=getattr(http_request.state, "client_ip", None),
             detail=request.question[:200],
-            extra={"knowledge_base": request.knowledge_base},
+            extra={"knowledge_base": kb_name or "auto", "decision": decision},
         )
-        return {"answer": answer, "citations": [citation.__dict__ for citation in citations]}
+        if decision == "review":
+            enqueue_review(
+                question=request.question,
+                answer=answer,
+                knowledge_base=kb_name or "auto",
+                citations=[citation.__dict__ for citation in citations],
+                decision=decision,
+                asked_by=user.username,
+            )
+        return {"answer": answer, "citations": [citation.__dict__ for citation in citations], "decision": decision}
     except (ValueError, RuntimeError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -53,44 +64,51 @@ def chat_stream(
     http_request: Request,
     user: User = Depends(get_current_user),
 ) -> StreamingResponse:
-    """执行流式 RAG 问答（SSE），先下发引用，再逐块下发回答增量（需读权限）。
+    """执行流式 RAG 问答（SSE），先下发引用，再逐块下发回答增量（未指定知识库时自动路由）。
 
     事件协议：
-      data: {"type":"citations","citations":[...]}  引用列表（回答前一次）
+      data: {"type":"citations","citations":[...],"decision":"answer|review|refuse"}  引用 + 门禁三态（回答前一次）
       data: {"type":"delta","text":"..."}           回答增量文本（多次）
       data: {"type":"done"}                         结束
       data: {"type":"error","message":"..."}        出错
     """
-    ensure_kb_access(user, request.knowledge_base, write=False)
+    kb_name, kb_names = resolve_kb_names(user, request.knowledge_base)
     log_event(
         "chat",
         user=user.username,
         ip=getattr(http_request.state, "client_ip", None),
         detail=request.question[:200],
-        extra={"knowledge_base": request.knowledge_base, "stream": True},
+        extra={"knowledge_base": kb_name or "auto", "stream": True},
     )
 
     def event_stream():
         try:
             chat_config = get_provider()
             embedding_config = get_provider(for_embeddings=True)
-            with SessionLocal() as session:
-                _, citations, context = retrieve_context(
-                    session, request.question, request.knowledge_base, embedding_config
-                )
-            # 防幻觉门禁拒答：直接流式下发固定文案
-            if context is None:
-                yield _sse({"type": "citations", "citations": []})
-                yield _sse({"type": "delta", "text": "知识库中未找到相关依据。"})
-                yield _sse({"type": "done"})
-                return
-            # 先下发引用，再逐块下发回答
-            yield _sse({"type": "citations", "citations": [c.__dict__ for c in citations]})
-            for text in OpenAICompatibleProvider(chat_config).chat_stream(
-                SYSTEM_PROMPT, build_user_prompt(context, request.question)
+            answer_parts: list[str] = []
+            decision: str | None = None
+            citations: list[dict] = []
+            for evt_type, payload in iter_answer_events(
+                request.question, kb_name, chat_config, embedding_config, kb_names=kb_names
             ):
-                yield _sse({"type": "delta", "text": text})
-            yield _sse({"type": "done"})
+                if evt_type == "delta":
+                    answer_parts.append(payload["text"])
+                elif evt_type == "citations":
+                    citations = payload["citations"]
+                    decision = payload["decision"]
+                elif evt_type == "done":
+                    decision = payload["decision"]
+                yield _sse({**payload, "type": evt_type})
+            # review 状态：流式结束后把完整回答写入待复核队列
+            if decision == "review":
+                enqueue_review(
+                    question=request.question,
+                    answer="".join(answer_parts),
+                    knowledge_base=kb_name or "auto",
+                    citations=citations,
+                    decision=decision,
+                    asked_by=user.username,
+                )
         except Exception as exc:  # noqa: BLE001 - 流式阶段异常以 SSE error 事件返回
             yield _sse({"type": "error", "message": str(exc)})
 

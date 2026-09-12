@@ -14,12 +14,24 @@ from app.core.config import cors_origins
 from app.core.database import init_db
 from app.routers import api_router
 from app.routers.middleware import auth_middleware
+from app.services.audit import log_event
+from app.services.conversation import apply_retention
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """应用生命周期：启动时初始化数据库（pgvector 扩展 + 数据表）。"""
+    """应用生命周期：初始化数据库，并（若配置了保留策略）执行一次会话保留清理。"""
     init_db()
+    try:
+        result = apply_retention()
+        if result["archived"] or result["deleted"]:
+            log_event(
+                "conversation_retention",
+                detail=f"startup: archived={result['archived']} deleted={result['deleted']}",
+                extra=result,
+            )
+    except Exception:  # noqa: BLE001 - 保留策略失败不能阻断启动
+        pass
     yield
 
 

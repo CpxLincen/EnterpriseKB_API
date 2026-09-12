@@ -157,6 +157,23 @@ def list_users() -> None:
             typer.echo(f"{user.username}  role={user.role}  active={user.is_active}  grants={', '.join(grants) or '-'}")
 
 
+@cli.command("retention")
+def retention_command() -> None:
+    """执行会话保留策略：自动归档长期不活跃会话，并永久删除过期归档会话。
+
+    阈值来自环境变量 CONVERSATION_ARCHIVE_DAYS / CONVERSATION_RETENTION_DAYS；
+    未配置（或 ≤0）的步骤会自动跳过。可挂到系统定时任务定期执行。
+    """
+    from app.services.conversation import apply_retention
+
+    init_db()
+    result = apply_retention()
+    typer.echo(
+        f"retention done: archived={result['archived']} deleted={result['deleted']} "
+        f"(archive_days={result['archive_days']}, retention_days={result['retention_days']})"
+    )
+
+
 @cli.command("eval")
 def eval_command(
     eval_set: Path = typer.Option("eval/hr-eval.yaml", "--eval-set", help="评测集 YAML 文件路径"),

@@ -4,10 +4,28 @@ from pydantic import BaseModel
 
 
 class ChatRequest(BaseModel):
-    """聊天请求体：问题 + 目标知识库（默认为 default）。"""
+    """聊天请求体：问题 + 可选目标知识库。
+
+    knowledge_base 为空、"auto" 或未传时走自动路由（检索当前用户全部可读知识库）；
+    传具体库名时仅检索该库。
+    """
 
     question: str
-    knowledge_base: str = "default"
+    knowledge_base: str | None = None
+
+
+class ConversationCreateRequest(BaseModel):
+    """新建会话请求体：标题与知识库均可选，缺省由服务端补齐。"""
+
+    title: str | None = None
+    knowledge_base: str | None = None
+
+
+class ConversationChatRequest(BaseModel):
+    """会话内问答请求体：知识库可选，缺省沿用会话已绑定的知识库。"""
+
+    question: str
+    knowledge_base: str | None = None
 
 
 class LoginRequest(BaseModel):

@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
-from app.models.knowledge import DocumentChunk, KnowledgeBase
+from app.models.knowledge import Document, DocumentChunk, KnowledgeBase
 from app.services.rerank import get_reranker
 from app.core.config import RetrievalConfig
 
@@ -160,6 +160,21 @@ def invalidate_by_kb_name(session: Session, kb_name: str) -> None:
         invalidate(kb.id)
 
 
+def _fetch_chunks(session: Session, ids: list[int]) -> list[DocumentChunk]:
+    """按给定 id 顺序取回文本块（预取 document 与 knowledge_base，避免 N+1 懒加载）。"""
+    rows = (
+        session.execute(
+            select(DocumentChunk)
+            .options(joinedload(DocumentChunk.document).joinedload(Document.knowledge_base))
+            .where(DocumentChunk.id.in_(ids))
+        )
+        .scalars()
+        .all()
+    )
+    by_id = {c.id: c for c in rows}
+    return [by_id[cid] for cid in ids if cid in by_id]
+
+
 def hybrid_search(
     session: Session,
     kb: KnowledgeBase,
@@ -189,22 +204,12 @@ def hybrid_search(
     ).all()
     dense_dist: dict[int, float] = {row.DocumentChunk.id: float(row.distance) for row in dense_rows}
 
-    def fetch(ids: list[int]) -> list[DocumentChunk]:
-        """按给定 id 顺序取回文本块（预取 document，避免 N+1 懒加载）。"""
-        rows = session.execute(
-            select(DocumentChunk)
-            .options(joinedload(DocumentChunk.document))
-            .where(DocumentChunk.id.in_(ids))
-        ).scalars().all()
-        by_id = {c.id: c for c in rows}
-        return [by_id[cid] for cid in ids if cid in by_id]
-
     best_dense_distance = min(dense_dist.values()) if dense_dist else None
 
     # 纯向量模式：直接返回稠密 top_k，跳过 BM25/RRF/Rerank
     if mode == "dense":
         dense_order = [row.DocumentChunk.id for row in dense_rows][: config.top_k]
-        return fetch(dense_order), RetrievalSignals(mode=mode, best_dense_distance=best_dense_distance)
+        return _fetch_chunks(session, dense_order), RetrievalSignals(mode=mode, best_dense_distance=best_dense_distance)
 
     # 2) 稀疏检索：BM25 得分排序取前 candidates 个候选
     bm25 = get_bm25(session, kb.id)
@@ -232,7 +237,7 @@ def hybrid_search(
     if mode == "rerank" and config.rerank_enabled:
         # 4) Rerank：取 RRF 前 rerank_candidates 个候选，用 BGE 交叉编码器逐对打分重排
         pool_ids = ordered_ids[: config.rerank_candidates]
-        pool_ordered = fetch(pool_ids)
+        pool_ordered = _fetch_chunks(session, pool_ids)
         scores = get_reranker(config.rerank_model, config.rerank_fp16).score(
             question, [c.content for c in pool_ordered]
         )
@@ -241,7 +246,83 @@ def hybrid_search(
         best_rerank_score = max(scores) if scores else None
     else:
         # 4) 混合模式：直接按 RRF 顺序取 top_k
-        top_chunks = fetch(ordered_ids[: config.top_k])
+        top_chunks = _fetch_chunks(session, ordered_ids[: config.top_k])
+
+    signals = RetrievalSignals(
+        mode=mode,
+        best_dense_distance=best_dense_distance,
+        best_bm25_score=best_bm25_score,
+        best_rerank_score=best_rerank_score,
+    )
+    return top_chunks, signals
+
+
+def multi_hybrid_search(
+    session: Session,
+    kbs: list[KnowledgeBase],
+    query_vector: list[float],
+    question: str,
+    config: RetrievalConfig,
+    mode: str = "rerank",
+) -> tuple[list[DocumentChunk], RetrievalSignals]:
+    """跨知识库检索（自动路由用）：稠密全局召回 + 每库 BM25 召回，rerank 全局精排。
+
+    与单库 hybrid_search 的区别：候选来自多个知识库，最终排序必须跨库可比——
+    rerank 模式用交叉编码器全局打分；dense/hybrid 模式退化用「余弦距离」全局排序
+    （距离是模型无关的绝对度量，跨库可比；BM25/RRF 分数是库内归一化，跨库不可比）。
+    """
+    kb_ids = [kb.id for kb in kbs]
+    # 1) 稠密召回：跨库全局按余弦距离升序取前 candidates
+    distance = DocumentChunk.embedding.cosine_distance(query_vector).label("distance")
+    dense_rows = session.execute(
+        select(DocumentChunk, distance)
+        .join(DocumentChunk.document)
+        .where(Document.knowledge_base_id.in_(kb_ids))
+        .order_by(distance)
+        .limit(config.candidates)
+    ).all()
+    dense_dist = {row.DocumentChunk.id: float(row.distance) for row in dense_rows}
+    best_dense_distance = min(dense_dist.values()) if dense_dist else None
+
+    # 2) 稀疏召回：逐库 BM25（分数仅库内可比，只用于召回，不用于最终排序）
+    sparse_per_kb: list[list[int]] = []
+    best_bm25_score = 0.0
+    if mode != "dense":
+        for kb in kbs:
+            bm25 = get_bm25(session, kb.id)
+            scores = bm25.score(tokenize(question))
+            if scores:
+                best_bm25_score = max(best_bm25_score, max(scores.values()))
+                sparse_per_kb.append(
+                    [bm25.doc_ids[i] for i in sorted(scores, key=scores.get, reverse=True)]
+                )
+            else:
+                sparse_per_kb.append([])
+
+    if not dense_dist and not any(sparse_per_kb):
+        return [], RetrievalSignals(
+            mode=mode, best_dense_distance=None, best_bm25_score=best_bm25_score
+        )
+
+    best_rerank_score: float | None = None
+    if mode == "rerank" and config.rerank_enabled:
+        # 3) 精排池：稠密全局前 rerank_candidates + 每库 BM25 前 rerank_candidates，去重
+        dense_pool = [row.DocumentChunk.id for row in dense_rows[: config.rerank_candidates]]
+        sparse_pool = [
+            cid for ranked in sparse_per_kb for cid in ranked[: config.rerank_candidates]
+        ]
+        pool_ids = list(dict.fromkeys(dense_pool + sparse_pool))[: config.rerank_candidates * 2]
+        pool = _fetch_chunks(session, pool_ids)
+        scores = get_reranker(config.rerank_model, config.rerank_fp16).score(
+            question, [c.content for c in pool]
+        )
+        ranked = sorted(zip(pool, scores), key=lambda pair: pair[1], reverse=True)
+        top_chunks = [chunk for chunk, _ in ranked[: config.top_k]]
+        best_rerank_score = max(scores) if scores else None
+    else:
+        # 4) 无 rerank：按稠密距离全局取 top_k（dense 可比较；hybrid 也退化为此）
+        dense_order = [row.DocumentChunk.id for row in dense_rows][: config.top_k]
+        top_chunks = _fetch_chunks(session, dense_order)
 
     signals = RetrievalSignals(
         mode=mode,

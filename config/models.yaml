@@ -38,6 +38,9 @@ retrieval:
   # 防幻觉门禁：以稠密距离为主、Rerank 分为辅（见 app/rag.py 的 should_refuse）。
   #   rerank_floor  稠密通过但最高重排分低于该值 → 判为“太弱”拒答（收紧，减少弱命中误答）
   #   rerank_rescue 稠密超阈值但最高重排分达到该值 → 救援放行（防止 BM25/Rerank 强命中被误拒）
+  #   rerank_review [floor, review) 区间为“模糊带”，判为 review（作答但标记人工复核）
+  #     ——真实数据标定：无依据题 rerank 分 ≤0.010，可答事实题 ≥0.406，中间留出宽裕复核带
   gate:
     rerank_floor: 0.05
+    rerank_review: 0.3
     rerank_rescue: 0.5

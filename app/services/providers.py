@@ -16,6 +16,12 @@ from openai import OpenAI
 from app.core.config import ProviderConfig
 
 
+# 单次 Embedding 请求的最大文本条数。Qwen text-embedding-v4 上限为 10，
+# 超过会返回 400（"batch size ... should not be larger than 10"）。
+# 入库时一次文档可能切出十几块，必须分批请求再按原顺序拼接。
+_EMBED_BATCH_SIZE = 10
+
+
 class OpenAICompatibleProvider:
     """面向任意 OpenAI-compatible 服务的 Provider 封装。
 
@@ -41,14 +47,21 @@ class OpenAICompatibleProvider:
             texts: 待向量化的文本列表（一次可传入多个文本块）。
         返回:
             与 texts 一一对应的向量列表。
+
+        实现上按 `_EMBED_BATCH_SIZE` 分批请求（供应商对单次批大小有限制），
+        并把各批结果按原顺序拼接，调用方无需感知分批。
         """
         # 供应商未配置 Embedding 模型时（如 DeepSeek）直接报错，
         # 防止请求打到不存在的模型
         if not self.config.embedding_model:
             raise RuntimeError(f"Provider '{self.config.name}' has no embedding model configured.")
-        response = self.client.embeddings.create(model=self.config.embedding_model, input=texts)
-        # 响应 data 中的顺序与请求输入顺序一致
-        return [item.embedding for item in response.data]
+        vectors: list[list[float]] = []
+        for start in range(0, len(texts), _EMBED_BATCH_SIZE):
+            batch = texts[start : start + _EMBED_BATCH_SIZE]
+            response = self.client.embeddings.create(model=self.config.embedding_model, input=batch)
+            # 响应 data 中的顺序与请求输入顺序一致
+            vectors.extend(item.embedding for item in response.data)
+        return vectors
 
     def chat(self, system: str, user: str) -> str:
         """调用聊天模型，返回模型生成的回答文本。

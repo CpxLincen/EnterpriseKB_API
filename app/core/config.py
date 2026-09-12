@@ -55,6 +55,7 @@ class RetrievalConfig:
     rerank_candidates: int = 10  # 送入 Rerank 的候选数（RRF 的前 N 个）
     rerank_fp16: str = "auto"  # 半精度推理：auto=自动（有 CUDA 则 true），或 true/false
     rerank_floor: float | None = None  # 防幻觉门禁：稠密通过但重排分低于该值则拒答（None=不收紧）
+    rerank_review: float | None = None  # 防幻觉门禁：[floor, review) 区间判为 review（作答但标记人工复核）
     rerank_rescue: float | None = None  # 防幻觉门禁：稠密超阈值但重排分达到该值则救援放行（None=不救援）
 
 
@@ -129,6 +130,28 @@ def max_upload_bytes() -> int:
     return int(os.getenv("MAX_UPLOAD_BYTES", str(100 * 1024 * 1024)))
 
 
+def _positive_int_env(name: str) -> int | None:
+    """读取非负整型环境变量；未配置或非法/≤0 时返回 None（表示关闭）。"""
+    raw = os.getenv(name, "").strip()
+    if not raw:
+        return None
+    try:
+        value = int(raw)
+    except ValueError:
+        return None
+    return value if value > 0 else None
+
+
+def conversation_archive_days() -> int | None:
+    """活跃会话超过该天数未更新时自动归档；未配置/≤0 表示关闭。"""
+    return _positive_int_env("CONVERSATION_ARCHIVE_DAYS")
+
+
+def conversation_retention_days() -> int | None:
+    """已归档会话超过该天数后永久删除；未配置/≤0 表示关闭。"""
+    return _positive_int_env("CONVERSATION_RETENTION_DAYS")
+
+
 def _raw_config() -> dict:
     """读取并解析 config/models.yaml，返回原始配置字典。"""
     with (ROOT / "config" / "models.yaml").open("r", encoding="utf-8") as f:
@@ -172,6 +195,7 @@ def retrieval_config() -> RetrievalConfig:
     rerank = raw.get("rerank") or {}
     gate = raw.get("gate") or {}
     rerank_floor = gate.get("rerank_floor")
+    rerank_review = gate.get("rerank_review")
     rerank_rescue = gate.get("rerank_rescue")
     return RetrievalConfig(
         top_k=int(raw.get("top_k", 5)),
@@ -182,5 +206,6 @@ def retrieval_config() -> RetrievalConfig:
         rerank_candidates=int(rerank.get("candidates", 10)),
         rerank_fp16=str(rerank.get("fp16", "auto")),
         rerank_floor=float(rerank_floor) if rerank_floor is not None else None,
+        rerank_review=float(rerank_review) if rerank_review is not None else None,
         rerank_rescue=float(rerank_rescue) if rerank_rescue is not None else None,
     )
