@@ -58,6 +58,7 @@ class DocumentChunk(Base):
     content: Mapped[str] = mapped_column(Text)  # 文本块内容
     page_number: Mapped[int | None] = mapped_column(Integer, nullable=True)  # 页码（非 PDF 为 None）
     chunk_index: Mapped[int] = mapped_column(Integer)  # 块在文档内的序号（从 0 开始）
+    content_type: Mapped[str] = mapped_column(String(20), nullable=False, default="text", server_default="text")  # 块类型：text / table
     embedding: Mapped[list[float]] = mapped_column(Vector())  # 文本块的向量（维度由建库时确定）
     # 反向关系：所属文档
     document: Mapped[Document] = relationship(back_populates="chunks")

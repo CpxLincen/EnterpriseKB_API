@@ -18,7 +18,7 @@ from app.services.retrieval import invalidate
 router = APIRouter(prefix="/knowledge-bases", tags=["knowledge"])
 
 # 允许上传的文档扩展名（白名单）
-ALLOWED_SUFFIXES = {".md", ".txt", ".docx", ".pdf"}
+ALLOWED_SUFFIXES = {".md", ".txt", ".docx", ".pdf", ".xlsx", ".pptx", ".html", ".htm", ".epub"}
 
 
 @router.get("")
@@ -83,7 +83,10 @@ async def upload_document(
     filename = Path(file.filename or "document.txt").name
     suffix = Path(filename).suffix.lower()
     if suffix not in ALLOWED_SUFFIXES:
-        raise HTTPException(status_code=400, detail=f"Unsupported file type '{suffix}'. Allowed: .md, .txt, .docx, .pdf")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type '{suffix}'. Allowed: .md, .txt, .docx, .xlsx, .pptx, .html, .epub, .pdf",
+        )
     # 流式写入临时文件并限制大小，避免大文件一次性读入内存
     limit = max_upload_bytes()
     path: Path | None = None
@@ -101,6 +104,7 @@ async def upload_document(
                 temp.write(chunk)
         if written == 0:
             raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+        warnings_list: list[str] = []
         with SessionLocal() as session:
             chunks = ingest_file(
                 session,
@@ -108,6 +112,7 @@ async def upload_document(
                 knowledge_base,
                 get_provider(for_embeddings=True),
                 display_filename=filename,
+                warnings_out=warnings_list,
             )
         log_event(
             "document_upload",
@@ -116,7 +121,12 @@ async def upload_document(
             detail=filename,
             extra={"knowledge_base": knowledge_base, "chunks": chunks},
         )
-        return {"filename": filename, "knowledge_base": knowledge_base, "chunks": chunks}
+        return {
+            "filename": filename,
+            "knowledge_base": knowledge_base,
+            "chunks": chunks,
+            "warnings": warnings_list,
+        }
     except (ValueError, RuntimeError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     finally:

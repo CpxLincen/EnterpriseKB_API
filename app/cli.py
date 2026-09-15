@@ -41,10 +41,19 @@ def ingest(path: Path, knowledge_base: str = typer.Option("default", "--knowledg
     Embedding 使用配置中的 Embedding 供应商（如 Qwen）。
     """
     init_db()  # 确保数据表已存在
+    warnings_list: list[str] = []
     with SessionLocal() as session:
         # get_provider(for_embeddings=True) 取得 Embedding 配置
-        count = ingest_file(session, path, knowledge_base, get_provider(for_embeddings=True))
+        count = ingest_file(
+            session,
+            path,
+            knowledge_base,
+            get_provider(for_embeddings=True),
+            warnings_out=warnings_list,
+        )
     typer.echo(f"Imported {count} chunks into knowledge base '{knowledge_base}'.")
+    for warning in warnings_list:
+        typer.echo(f"WARNING: {warning}", err=True)
 
 
 @cli.command("ask")
