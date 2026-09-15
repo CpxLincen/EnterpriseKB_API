@@ -44,3 +44,12 @@ retrieval:
     rerank_floor: 0.05
     rerank_review: 0.3
     rerank_rescue: 0.5
+
+# 会话内短期记忆（Plan D：查询改写 + 短窗口历史 + 引用复用）：
+#   enabled             是否启用多轮记忆（关闭则退回单轮问答）
+#   max_history_messages 查询改写时回看的历史消息条数（user/assistant 交替）
+#   evidence_window_rounds reuse 时合并最近几轮 assistant 的检索块（证据窗口，按块去重）
+memory:
+  enabled: true
+  max_history_messages: 6
+  evidence_window_rounds: 3

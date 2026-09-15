@@ -59,6 +59,15 @@ class RetrievalConfig:
     rerank_rescue: float | None = None  # 防幻觉门禁：稠密超阈值但重排分达到该值则救援放行（None=不救援）
 
 
+@dataclass(frozen=True)
+class MemoryConfig:
+    """会话内短期记忆配置（config/models.yaml 的 memory 段）。"""
+
+    enabled: bool = True  # 是否启用多轮记忆（关闭则退回单轮问答）
+    max_history_messages: int = 6  # 查询改写时回看的历史消息条数（user/assistant 交替）
+    evidence_window_rounds: int = 3  # reuse 时合并最近几轮 assistant 的检索块（证据窗口，去重后合并）
+
+
 def database_url() -> str:
     """返回数据库连接串（默认指向本地 5432 端口的 enterprise_kb 库）。"""
     return os.getenv(
@@ -208,4 +217,14 @@ def retrieval_config() -> RetrievalConfig:
         rerank_floor=float(rerank_floor) if rerank_floor is not None else None,
         rerank_review=float(rerank_review) if rerank_review is not None else None,
         rerank_rescue=float(rerank_rescue) if rerank_rescue is not None else None,
+    )
+
+
+def memory_config() -> MemoryConfig:
+    """读取会话内短期记忆配置（enabled / max_history_messages）。"""
+    raw = _raw_config().get("memory") or {}
+    return MemoryConfig(
+        enabled=bool(raw.get("enabled", True)),
+        max_history_messages=int(raw.get("max_history_messages", 6)),
+        evidence_window_rounds=int(raw.get("evidence_window_rounds", 3)),
     )

@@ -61,3 +61,16 @@ def init_db() -> None:
         connection.exec_driver_sql(
             "CREATE INDEX IF NOT EXISTS ix_conversations_status ON conversations (status)"
         )
+        # 会话内短期记忆（方案 D）：assistant 消息落库本轮检索到的完整文本块，
+        # 供「展开讲讲 / 再详细点」等加工类追问复用上一轮证据。旧库幂等补列。
+        connection.exec_driver_sql(
+            "ALTER TABLE conversation_messages ADD COLUMN IF NOT EXISTS context_chunks JSONB NULL"
+        )
+        connection.exec_driver_sql(
+            "ALTER TABLE conversation_messages ADD COLUMN IF NOT EXISTS memory VARCHAR(20) NULL"
+        )
+        # 文档解析扩展：文本块新增 content_type 列（text / table），旧库幂等补齐；
+        # 表格块以 Markdown 表格文本整体入库，避免与普通文本混排切块时被拆散。
+        connection.exec_driver_sql(
+            "ALTER TABLE document_chunks ADD COLUMN IF NOT EXISTS content_type VARCHAR(20) NOT NULL DEFAULT 'text'"
+        )

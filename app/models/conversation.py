@@ -56,6 +56,8 @@ class ConversationMessage(Base):
     content: Mapped[str] = mapped_column(Text)  # 消息文本
     citations: Mapped[list | None] = mapped_column(JSONB, nullable=True)  # 引用列表（assistant 消息）
     decision: Mapped[str | None] = mapped_column(String(20), nullable=True)  # 门禁判定（refuse/review/answer）
+    context_chunks: Mapped[list | None] = mapped_column(JSONB, nullable=True)  # 本轮检索到的完整文本块（供记忆复用）
+    memory: Mapped[str | None] = mapped_column(String(20), nullable=True)  # 记忆意图（new/followup/reuse）
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
 
     conversation: Mapped["Conversation"] = relationship(back_populates="messages")

@@ -98,6 +98,8 @@ def chat_stream(
                     decision = payload["decision"]
                 elif evt_type == "done":
                     decision = payload["decision"]
+                elif evt_type == "chunks":
+                    continue  # 内部事件：仅供会话落库，非会话流式接口不转发
                 yield _sse({**payload, "type": evt_type})
             # review 状态：流式结束后把完整回答写入待复核队列
             if decision == "review":

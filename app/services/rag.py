@@ -239,6 +239,116 @@ def build_user_prompt(context: str, question: str) -> str:
     return f"资料：\n{context}\n\n问题：{question}"
 
 
+def serialize_chunks(chunks: list[DocumentChunk], citations: list[Citation]) -> list[dict]:
+    """把检索块 + 引用序列化为可落库的 JSON 结构（供会话内记忆复用上一轮证据）。"""
+    excerpts = [c.excerpt for c in citations]
+    return [
+        {
+            "knowledge_base": c.document.knowledge_base.name,
+            "filename": c.document.filename,
+            "page_number": c.page_number,
+            "chunk_index": c.chunk_index,
+            "content": c.content,
+            "excerpt": excerpts[i] if i < len(excerpts) else _excerpt(c.content, ""),
+        }
+        for i, c in enumerate(chunks)
+    ]
+
+
+def citations_from_stored_chunks(stored: list[dict] | None) -> list[Citation]:
+    """从落库的 context_chunks 重建引用列表（reuse 场景使用）。"""
+    return [
+        Citation(
+            filename=item.get("filename", ""),
+            page_number=item.get("page_number"),
+            chunk_index=int(item.get("chunk_index", i + 1)),
+            excerpt=item.get("excerpt", ""),
+            knowledge_base=item.get("knowledge_base", ""),
+        )
+        for i, item in enumerate(stored or [])
+    ]
+
+
+def context_from_stored_chunks(stored: list[dict] | None) -> str:
+    """从落库的 context_chunks 重建 <资料> 上下文（reuse 场景使用）。"""
+    parts: list[str] = []
+    for i, item in enumerate(stored or []):
+        kb = item.get("knowledge_base", "")
+        filename = item.get("filename", "")
+        page = item.get("page_number")
+        content = item.get("content", "")
+        if kb:
+            parts.append(
+                f"[{i + 1}] 知识库：{kb}，文件：{filename}，页码：{page or '无'}，内容：{content}"
+            )
+        else:
+            parts.append(f"[{i + 1}] 文件：{filename}，页码：{page or '无'}，内容：{content}")
+    return "<资料>\n" + "\n\n".join(parts) + "\n</资料>"
+
+
+def _format_history(history: list[dict] | None) -> str:
+    """把会话历史消息格式化为文本（reuse 时供模型理解当前问题所指）。"""
+    lines = []
+    for item in history or []:
+        who = "用户" if item.get("role") == "user" else "助手"
+        lines.append(f"{who}：{item.get('content', '')}")
+    return "\n".join(lines)
+
+
+def build_reuse_user_prompt(context: str, history: list[dict] | None, question: str) -> str:
+    """组装 reuse 场景的用户提示词：资料 + 对话历史 + 当前问题。
+
+    与普通问答不同，reuse 的当前问题（如“展开讲讲刚才那条”）脱离上文后无法独立理解，
+    因此必须把「对话历史」一并带入，让模型能消解“刚才那条”的指代；历史仅供理解所指，
+    回答仍须严格以 <资料> 为准（由 SYSTEM_PROMPT 约束）。
+    """
+    parts = [f"资料：\n{context}"]
+    history_text = _format_history(history)
+    if history_text:
+        parts.append(f"对话历史（仅用于理解当前问题所指，回答仍须以资料为准）：\n{history_text}")
+    parts.append(f"问题：{question}")
+    return "\n\n".join(parts)
+
+
+def answer_from_stored(
+    question: str,
+    stored_chunks: list[dict] | None,
+    decision: str,
+    chat_config: ProviderConfig,
+    history: list[dict] | None = None,
+) -> tuple[str, list[Citation]]:
+    """基于上一轮已检索资料作答（reuse）：不重新检索，复用上一轮引用与原文。"""
+    citations = citations_from_stored_chunks(stored_chunks)
+    context = context_from_stored_chunks(stored_chunks)
+    answer = OpenAICompatibleProvider(chat_config).chat(
+        SYSTEM_PROMPT, build_reuse_user_prompt(context, history, question)
+    )
+    return answer, citations
+
+
+def iter_answer_reuse_events(
+    question: str,
+    stored_chunks: list[dict] | None,
+    decision: str,
+    chat_config: ProviderConfig,
+    history: list[dict] | None = None,
+):
+    """reuse 场景的流式事件生成器：复用上一轮引用与原文，流式生成回答。"""
+    citations = citations_from_stored_chunks(stored_chunks)
+    context = context_from_stored_chunks(stored_chunks)
+    user_prompt = build_reuse_user_prompt(context, history, question)
+    yield "citations", {
+        "citations": [c.__dict__ for c in citations],
+        "decision": decision,
+        "memory": "reuse",
+    }
+    for text in OpenAICompatibleProvider(chat_config).chat_stream(
+        SYSTEM_PROMPT, user_prompt
+    ):
+        yield "delta", {"text": text}
+    yield "done", {"decision": decision}
+
+
 def ask(
     session: Session,
     question: str,
@@ -279,6 +389,7 @@ def iter_answer_events(
     chat_config: ProviderConfig,
     embedding_config: ProviderConfig,
     kb_names: list[str] | None = None,
+    memory: str = "new",
 ):
     """流式问答事件生成器（供 SSE 接口复用）。
 
@@ -286,19 +397,29 @@ def iter_answer_events(
       citations —— 引用列表 + 门禁三态（回答前一次；refuse 时引用为空）
       delta     —— 回答增量文本（多次；refuse 时只下发一次固定拒答文案）
       done      —— 结束
+    另有内部事件 chunks —— 本轮检索到的完整文本块序列化结果（供会话落库，
+    由路由层消费、不转发给前端；refuse 时不下发）。
     检索在独立会话中完成并立即关闭，流式生成阶段不占用数据库连接；
     审计与人工复核入队等副作用由路由层负责。
     """
     with SessionLocal() as session:
-        _, citations, context, decision = retrieve_context(
+        chunks, citations, context, decision = retrieve_context(
             session, question, kb_name, embedding_config, kb_names=kb_names
         )
+        # 在会话仍打开时完成序列化（chunks 为 ORM 对象，脱离会话后无法再懒加载
+        # document.knowledge_base 等关系字段）。
+        stored_chunks = serialize_chunks(chunks, citations) if decision != GATE_REFUSE else []
     if decision == GATE_REFUSE:
-        yield "citations", {"citations": [], "decision": decision}
+        yield "citations", {"citations": [], "decision": decision, "memory": memory}
         yield "delta", {"text": "知识库中未找到相关依据。"}
         yield "done", {"decision": decision}
         return
-    yield "citations", {"citations": [c.__dict__ for c in citations], "decision": decision}
+    yield "citations", {
+        "citations": [c.__dict__ for c in citations],
+        "decision": decision,
+        "memory": memory,
+    }
+    yield "chunks", {"chunks": stored_chunks}
     for text in OpenAICompatibleProvider(chat_config).chat_stream(
         SYSTEM_PROMPT, build_user_prompt(context, question)
     ):

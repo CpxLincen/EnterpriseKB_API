@@ -28,7 +28,14 @@ from app.routers.deps import get_current_user, require_admin, resolve_kb_names
 from app.schemas import ConversationChatRequest, ConversationCreateRequest
 from app.services.audit import log_event
 from app.services.conversation import apply_retention
-from app.services.rag import ask, iter_answer_events
+from app.services.memory import MEMORY_REUSE, build_turn_plan
+from app.services.rag import (
+    answer_from_stored,
+    ask,
+    iter_answer_events,
+    iter_answer_reuse_events,
+    serialize_chunks,
+)
 from app.services.review import enqueue_review
 
 router = APIRouter(prefix="/conversations", tags=["conversations"])
@@ -58,6 +65,7 @@ def _serialize_message(msg: ConversationMessage) -> dict:
         "content": msg.content,
         "citations": msg.citations or [],
         "decision": msg.decision,
+        "memory": msg.memory,
         "created_at": _iso(msg.created_at),
     }
 
@@ -273,20 +281,36 @@ def conversation_chat(
         if msg_count == 0 and (not conv.title or conv.title == "新对话"):
             conv.title = body.question[:50]
         conv.updated_at = datetime.now(timezone.utc)
-        session.add(
-            ConversationMessage(conversation_id=conv.id, role="user", content=body.question)
-        )
+        user_msg = ConversationMessage(conversation_id=conv.id, role="user", content=body.question)
+        session.add(user_msg)
         session.commit()
+        session.refresh(user_msg)
+        chat_config = get_provider()
+        embedding_config = get_provider(for_embeddings=True)
+        plan = build_turn_plan(session, conv.id, body.question, chat_config, before_id=user_msg.id)
         try:
-            answer, citations, decision = ask(
-                session,
-                body.question,
-                kb_name,
-                get_provider(),
-                get_provider(for_embeddings=True),
-                return_decision=True,
-                kb_names=kb_names,
-            )
+            if plan.type == MEMORY_REUSE:
+                answer, citations = answer_from_stored(
+                    body.question,
+                    plan.reuse_chunks,
+                    plan.reuse_decision or "answer",
+                    chat_config,
+                    history=plan.history,
+                )
+                decision = plan.reuse_decision or "answer"
+                context_chunks = plan.reuse_chunks
+            else:
+                answer, citations, chunks, decision = ask(
+                    session,
+                    plan.query,
+                    kb_name,
+                    chat_config,
+                    embedding_config,
+                    return_decision=True,
+                    return_chunks=True,
+                    kb_names=kb_names,
+                )
+                context_chunks = serialize_chunks(chunks, citations)
         except (ValueError, RuntimeError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         session.add(
@@ -296,6 +320,8 @@ def conversation_chat(
                 content=answer,
                 citations=[c.__dict__ for c in citations],
                 decision=decision,
+                context_chunks=context_chunks,
+                memory=plan.type,
             )
         )
         conv.updated_at = datetime.now(timezone.utc)
@@ -305,13 +331,20 @@ def conversation_chat(
             "citations": [c.__dict__ for c in citations],
             "decision": decision,
             "conversation_id": conv.id,
+            "memory": plan.type,
         }
     log_event(
         "chat",
         user=user.username,
         ip=getattr(request.state, "client_ip", None),
         detail=body.question[:200],
-        extra={"knowledge_base": kb_name or "auto", "decision": decision, "conversation_id": conv.id, "stream": False},
+        extra={
+            "knowledge_base": kb_name or "auto",
+            "decision": decision,
+            "conversation_id": conv.id,
+            "stream": False,
+            "memory": plan.type,
+        },
     )
     if decision == "review":
         enqueue_review(
@@ -347,29 +380,47 @@ def conversation_chat_stream(
         if msg_count == 0 and (not conv.title or conv.title == "新对话"):
             conv.title = body.question[:50]
         conv.updated_at = datetime.now(timezone.utc)
-        session.add(
-            ConversationMessage(conversation_id=conv.id, role="user", content=body.question)
-        )
+        user_msg = ConversationMessage(conversation_id=conv.id, role="user", content=body.question)
+        session.add(user_msg)
         session.commit()
+        session.refresh(user_msg)
         conv_id = conv.id
+        chat_config = get_provider()
+        embedding_config = get_provider(for_embeddings=True)
+        plan = build_turn_plan(session, conv.id, body.question, chat_config, before_id=user_msg.id)
     log_event(
         "chat",
         user=user.username,
         ip=getattr(request.state, "client_ip", None),
         detail=body.question[:200],
-        extra={"knowledge_base": kb_name or "auto", "conversation_id": conv_id, "stream": True},
+        extra={
+            "knowledge_base": kb_name or "auto",
+            "conversation_id": conv_id,
+            "stream": True,
+            "memory": plan.type,
+        },
     )
 
     def event_stream():
         try:
-            chat_config = get_provider()
-            embedding_config = get_provider(for_embeddings=True)
             answer_parts: list[str] = []
             decision: str | None = None
             citations: list[dict] = []
-            for evt_type, payload in iter_answer_events(
-                body.question, kb_name, chat_config, embedding_config, kb_names=kb_names
-            ):
+            context_chunks: list[dict] | None = None
+            if plan.type == MEMORY_REUSE:
+                gen = iter_answer_reuse_events(
+                    body.question,
+                    plan.reuse_chunks,
+                    plan.reuse_decision or "answer",
+                    chat_config,
+                    history=plan.history,
+                )
+                context_chunks = plan.reuse_chunks
+            else:
+                gen = iter_answer_events(
+                    plan.query, kb_name, chat_config, embedding_config, kb_names=kb_names, memory=plan.type
+                )
+            for evt_type, payload in gen:
                 if evt_type == "delta":
                     answer_parts.append(payload["text"])
                 elif evt_type == "citations":
@@ -377,6 +428,9 @@ def conversation_chat_stream(
                     decision = payload["decision"]
                 elif evt_type == "done":
                     decision = payload["decision"]
+                elif evt_type == "chunks":
+                    context_chunks = payload["chunks"]
+                    continue  # 内部事件：仅用于落库，不转发给前端
                 yield _sse({**payload, "type": evt_type})
             with SessionLocal() as session:
                 session.add(
@@ -386,6 +440,8 @@ def conversation_chat_stream(
                         content="".join(answer_parts),
                         citations=citations,
                         decision=decision,
+                        context_chunks=context_chunks,
+                        memory=plan.type,
                     )
                 )
                 conv = session.get(Conversation, conv_id)
