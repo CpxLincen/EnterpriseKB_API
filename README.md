@@ -59,6 +59,8 @@ python -m app.cli ask "年假如何计算？" --knowledge-base hr               
 python -m app.cli create-user <用户名> [--role admin|user] [--display-name 名字] [--email 邮箱]
 python -m app.cli grant <用户名> --knowledge-base hr [--read/--no-read] [--write]
 python -m app.cli list-users                                 # 查看用户与授权
+python -m app.cli reingest <源目录> --knowledge-base hr        # 按新解析策略重导知识库（替换同名文档）
+python -m app.cli rebuild <源目录> --knowledge-base hr         # 清空后按当前配置重建索引（可换 Embedding）
 python -m app.cli eval --eval-set .\eval\hr-eval.yaml        # 跑评测集（检索命中/事实覆盖/拒答）
 ```
 
@@ -245,6 +247,6 @@ app/
 3. `app.eval` 暴露 `--modes` 做三方式（向量/混合/Rerank）对比 CLI；
 4. 块级 hit@k/MRR 接入 CI 回归门禁；补 pytest 自动化测试；
 5. 评测集替换 / 补充真实用户问题；
-6. 文档解析：已支持 DOCX / XLSX / PPTX / PDF 表格结构化（含无边框检测与 DOCX/XLSX 合并单元格）+ HTML / EPUB 正文；扫描 PDF OCR 为可选能力（`pip install rapidocr-onnxruntime` 后自动识别）；图片/图表结构化、文档版本、增量同步、重建索引待做；
+6. 文档解析：已支持 DOCX / XLSX / PPTX / PDF 表格结构化（含无边框检测与 DOCX/XLSX/HTML/PPTX 合并单元格）+ HTML / EPUB 正文；表格入库已做列语义增强（`列名：值`）；扫描 PDF OCR 为可选能力（`pip install rapidocr-onnxruntime` 后自动识别）；上传已做 magic bytes 内容嗅探、解析结构化指标进审计、单文档解析内存保护（`MAX_PARSE_BYTES`），并提供 `reingest` / `rebuild` 重建命令；图片/图表结构化、文档版本、增量同步待做；
 7. SSO 对真实 IdP 端到端实测；接入只读 MCP 与首个 Skill；
 8. 部署镜像纳入 FlagEmbedding 与重排模型分发；跟踪 Docker Desktop #531/#532 socket bug。

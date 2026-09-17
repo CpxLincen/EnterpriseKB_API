@@ -179,6 +179,7 @@ docker push <registry>/<ns>/enterprise-kb-frontend:1.0.0
 | `OIDC_DISCOVERY_URL` 等 | 否 | - | SSO 所需配置（见 deploy.env.example） |
 | `CORS_ORIGINS` | 否 | 空 | 跨域来源，逗号分隔；同源部署留空 |
 | `MAX_UPLOAD_BYTES` | 否 | `104857600` | 上传大小上限（100MB） |
+| `MAX_PARSE_BYTES` | 否 | `536870912` | 单文档解析内存上限（512MB），限制读入大小与 ZIP 解压后体积，防 zip bomb |
 | `AUDIT_LOG_FILE` | 否 | - | 审计日志文件路径（留空仅输出 stdout） |
 
 切换回答模型：编辑 `E:\EnterpriseKB\config\models.yaml` 的 `active_provider`

@@ -139,6 +139,15 @@ def max_upload_bytes() -> int:
     return int(os.getenv("MAX_UPLOAD_BYTES", str(100 * 1024 * 1024)))
 
 
+def max_parse_bytes() -> int:
+    """单文档解析允许的最大体积（字节），默认 512MB。
+
+    用于保护解析内存：既限制读入文件本身的大小（CLI 导入），也限制 ZIP 容器
+    （docx/xlsx/pptx/epub）解压后的总体积，防止 zip bomb / 超大 XML 拖垮进程。
+    """
+    return int(os.getenv("MAX_PARSE_BYTES", str(512 * 1024 * 1024)))
+
+
 def _positive_int_env(name: str) -> int | None:
     """读取非负整型环境变量；未配置或非法/≤0 时返回 None（表示关闭）。"""
     raw = os.getenv(name, "").strip()

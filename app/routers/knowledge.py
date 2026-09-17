@@ -10,15 +10,14 @@ from app.core.config import get_provider, max_upload_bytes
 from app.core.database import SessionLocal
 from app.models.auth import KnowledgeBaseAccess, User
 from app.models.knowledge import Document, DocumentChunk, KnowledgeBase
-from app.routers.deps import get_current_user, require_kb_access
+from app.routers.deps import get_current_user, require_admin, require_kb_access
+from app.schemas import KnowledgeBaseRebuildRequest
 from app.services.audit import log_event
-from app.services.ingestion import ingest_file
+from app.services.ingestion import ALLOWED_SUFFIXES, ingest_file_detailed, rebuild_knowledge_base
+from app.services.providers import ProviderError
 from app.services.retrieval import invalidate
 
 router = APIRouter(prefix="/knowledge-bases", tags=["knowledge"])
-
-# 允许上传的文档扩展名（白名单）
-ALLOWED_SUFFIXES = {".md", ".txt", ".docx", ".pdf", ".xlsx", ".pptx", ".html", ".htm", ".epub"}
 
 
 @router.get("")
@@ -106,7 +105,7 @@ async def upload_document(
             raise HTTPException(status_code=400, detail="Uploaded file is empty.")
         warnings_list: list[str] = []
         with SessionLocal() as session:
-            chunks = ingest_file(
+            chunks, stats = ingest_file_detailed(
                 session,
                 path,
                 knowledge_base,
@@ -119,15 +118,45 @@ async def upload_document(
             user=user.username,
             ip=getattr(request.state, "client_ip", None),
             detail=filename,
-            extra={"knowledge_base": knowledge_base, "chunks": chunks},
+            extra={
+                "knowledge_base": knowledge_base,
+                "chunks": chunks,
+                "format": stats.format,
+                "text_chunks": stats.text_chunks,
+                "table_chunks": stats.table_chunks,
+                "skipped_pages": stats.skipped_pages,
+                "ocr_pages": stats.ocr_pages,
+                "parse_ms": round(stats.parse_ms, 1),
+            },
         )
         return {
             "filename": filename,
             "knowledge_base": knowledge_base,
             "chunks": chunks,
+            "text_chunks": stats.text_chunks,
+            "table_chunks": stats.table_chunks,
+            "skipped_pages": stats.skipped_pages,
+            "ocr_pages": stats.ocr_pages,
+            "parse_ms": round(stats.parse_ms, 1),
             "warnings": warnings_list,
         }
+    except ProviderError as exc:
+        log_event(
+            "document_upload_failed",
+            user=user.username,
+            ip=getattr(request.state, "client_ip", None),
+            detail=filename,
+            extra={"knowledge_base": knowledge_base, "error": str(exc)},
+        )
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
     except (ValueError, RuntimeError) as exc:
+        log_event(
+            "document_upload_failed",
+            user=user.username,
+            ip=getattr(request.state, "client_ip", None),
+            detail=filename,
+            extra={"knowledge_base": knowledge_base, "error": str(exc)},
+        )
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     finally:
         if path is not None:
@@ -166,3 +195,124 @@ def delete_document(
             extra={"knowledge_base": knowledge_base, "document_id": document_id},
         )
         return {"deleted": True, "filename": filename, "knowledge_base": knowledge_base}
+
+
+@router.post("/{knowledge_base}/reingest")
+def reingest_knowledge_base(
+    knowledge_base: str,
+    body: KnowledgeBaseRebuildRequest,
+    request: Request,
+    user: User = Depends(require_admin),
+) -> dict:
+    """按当前解析策略重导知识库（保持 Embedding 配置不变，逐文件替换同名文档）。
+
+    仅 admin 可执行；source_dir 为服务器本机源文档目录。单文件失败不阻断其余文件，
+    错误计入返回的 errors 列表。
+    """
+    warnings_list: list[str] = []
+    try:
+        result = rebuild_knowledge_base(
+            knowledge_base,
+            Path(body.source_dir),
+            get_provider(for_embeddings=True),
+            replace_embedding=False,
+            warnings_out=warnings_list,
+        )
+    except ProviderError as exc:
+        log_event(
+            "kb_reingest_failed",
+            user=user.username,
+            ip=getattr(request.state, "client_ip", None),
+            detail=knowledge_base,
+            extra={"knowledge_base": knowledge_base, "error": str(exc)},
+        )
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except (ValueError, RuntimeError) as exc:
+        log_event(
+            "kb_reingest_failed",
+            user=user.username,
+            ip=getattr(request.state, "client_ip", None),
+            detail=knowledge_base,
+            extra={"knowledge_base": knowledge_base, "error": str(exc)},
+        )
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    log_event(
+        "kb_reingest",
+        user=user.username,
+        ip=getattr(request.state, "client_ip", None),
+        detail=knowledge_base,
+        extra={
+            "knowledge_base": knowledge_base,
+            "source_dir": body.source_dir,
+            "processed": result.processed,
+            "chunks": result.chunks,
+            "errors": result.errors,
+        },
+    )
+    return {
+        "knowledge_base": knowledge_base,
+        "processed": result.processed,
+        "chunks": result.chunks,
+        "errors": result.errors,
+        "warnings": warnings_list,
+    }
+
+
+@router.post("/{knowledge_base}/rebuild")
+def rebuild_knowledge_base_endpoint(
+    knowledge_base: str,
+    body: KnowledgeBaseRebuildRequest,
+    request: Request,
+    user: User = Depends(require_admin),
+) -> dict:
+    """按当前 Embedding 与解析配置重建知识库索引（清空后从源目录全量重导）。
+
+    仅 admin 可执行；目录即知识库的完整真相，目录之外的旧文档会被清空。
+    """
+    warnings_list: list[str] = []
+    try:
+        result = rebuild_knowledge_base(
+            knowledge_base,
+            Path(body.source_dir),
+            get_provider(for_embeddings=True),
+            replace_embedding=True,
+            warnings_out=warnings_list,
+        )
+    except ProviderError as exc:
+        log_event(
+            "kb_rebuild_failed",
+            user=user.username,
+            ip=getattr(request.state, "client_ip", None),
+            detail=knowledge_base,
+            extra={"knowledge_base": knowledge_base, "error": str(exc)},
+        )
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except (ValueError, RuntimeError) as exc:
+        log_event(
+            "kb_rebuild_failed",
+            user=user.username,
+            ip=getattr(request.state, "client_ip", None),
+            detail=knowledge_base,
+            extra={"knowledge_base": knowledge_base, "error": str(exc)},
+        )
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    log_event(
+        "kb_rebuild",
+        user=user.username,
+        ip=getattr(request.state, "client_ip", None),
+        detail=knowledge_base,
+        extra={
+            "knowledge_base": knowledge_base,
+            "source_dir": body.source_dir,
+            "processed": result.processed,
+            "chunks": result.chunks,
+            "errors": result.errors,
+        },
+    )
+    return {
+        "knowledge_base": knowledge_base,
+        "processed": result.processed,
+        "chunks": result.chunks,
+        "errors": result.errors,
+        "warnings": warnings_list,
+    }

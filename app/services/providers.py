@@ -11,7 +11,7 @@ openai SDK 封装一个统一客户端。业务代码只依赖本模块，不直
 - 内部使用官方 openai SDK，通过 base_url 指向 Qwen / DeepSeek 等兼容服务
 """
 
-from openai import OpenAI
+from openai import OpenAI, OpenAIError
 
 from app.core.config import ProviderConfig
 
@@ -20,6 +20,10 @@ from app.core.config import ProviderConfig
 # 超过会返回 400（"batch size ... should not be larger than 10"）。
 # 入库时一次文档可能切出十几块，必须分批请求再按原顺序拼接。
 _EMBED_BATCH_SIZE = 10
+
+
+class ProviderError(RuntimeError):
+    """模型供应商调用失败（网络 / 鉴权 / 限流 / 服务端错误），业务层可统一按运行时错误处理。"""
 
 
 class OpenAICompatibleProvider:
@@ -58,7 +62,10 @@ class OpenAICompatibleProvider:
         vectors: list[list[float]] = []
         for start in range(0, len(texts), _EMBED_BATCH_SIZE):
             batch = texts[start : start + _EMBED_BATCH_SIZE]
-            response = self.client.embeddings.create(model=self.config.embedding_model, input=batch)
+            try:
+                response = self.client.embeddings.create(model=self.config.embedding_model, input=batch)
+            except OpenAIError as exc:
+                raise ProviderError(f"Embedding call to '{self.config.name}' failed: {exc}") from exc
             # 响应 data 中的顺序与请求输入顺序一致
             vectors.extend(item.embedding for item in response.data)
         return vectors
@@ -72,11 +79,14 @@ class OpenAICompatibleProvider:
         返回:
             模型回答文本；为空时返回空字符串。
         """
-        response = self.client.chat.completions.create(
-            model=self.config.chat_model,
-            temperature=0.1,  # 低温采样，保证回答稳定、贴近资料
-            messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
-        )
+        try:
+            response = self.client.chat.completions.create(
+                model=self.config.chat_model,
+                temperature=0.1,  # 低温采样，保证回答稳定、贴近资料
+                messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
+            )
+        except OpenAIError as exc:
+            raise ProviderError(f"Chat call to '{self.config.name}' failed: {exc}") from exc
         return response.choices[0].message.content or ""
 
     def chat_stream(self, system: str, user: str):
@@ -85,16 +95,19 @@ class OpenAICompatibleProvider:
         与 chat() 参数一致、prompt 一致，区别在于开启 stream=True 并逐个
         yield 模型返回的 content 增量，供前端 SSE 流式渲染。
         """
-        response = self.client.chat.completions.create(
-            model=self.config.chat_model,
-            temperature=0.1,
-            messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
-            stream=True,
-        )
-        for chunk in response:
-            if not chunk.choices:
-                continue
-            delta = chunk.choices[0].delta
-            content = getattr(delta, "content", None)
-            if content:
-                yield content
+        try:
+            response = self.client.chat.completions.create(
+                model=self.config.chat_model,
+                temperature=0.1,
+                messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
+                stream=True,
+            )
+            for chunk in response:
+                if not chunk.choices:
+                    continue
+                delta = chunk.choices[0].delta
+                content = getattr(delta, "content", None)
+                if content:
+                    yield content
+        except OpenAIError as exc:
+            raise ProviderError(f"Chat stream call to '{self.config.name}' failed: {exc}") from exc

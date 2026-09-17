@@ -43,6 +43,63 @@ class Citation:
     knowledge_base: str = ""  # 来源知识库名（自动路由时标注具体命中库）
 
 
+def _table_header_indices(lines: list[str]) -> tuple[int, int]:
+    """在表格文本中定位表头与正文起始行：返回 (header_start, body_start)。
+
+    表头为第一个以 '|' 开头的行；其后若为分隔行（仅含 | - : 空格）则一并纳入表头。
+    """
+    for i, line in enumerate(lines):
+        if not line.lstrip().startswith("|"):
+            continue
+        if i + 1 < len(lines):
+            nxt = lines[i + 1]
+            if nxt.lstrip().startswith("|") and all(ch in "|-: " for ch in nxt):
+                return i, i + 2
+        return i, i + 1
+    return 0, 0
+
+
+def _looks_like_table(text: str) -> bool:
+    """判断文本是否为 Markdown 表格（含表头行 + 分隔行）。"""
+    lines = text.strip().split("\n")
+    header_start, body_start = _table_header_indices(lines)
+    return body_start > header_start and header_start < len(lines)
+
+
+def _excerpt_table(text: str, question: str, width: int = 280) -> str:
+    """表格块引用摘要：保留「表头 + 分隔行」+ 与问题词面命中的行，不破坏行列结构。"""
+    lines = text.strip().split("\n")
+    header_start, body_start = _table_header_indices(lines)
+    if body_start <= header_start:
+        return text[:width]
+    header = lines[header_start:body_start]
+    body = lines[body_start:]
+    header_len = sum(len(l) + 1 for l in header)
+    if header_len > width:
+        # 表头超宽（罕见）：按 width 截断表头兜底
+        header = [l[: max(1, width - 4)] + " …" for l in header]
+        header_len = sum(len(l) + 1 for l in header)
+    tokens = set(tokenize(question))
+
+    def score(line: str) -> int:
+        return sum(1 for t in tokens if t in line)
+
+    # 按命中分数降序、原顺序稳定排序，精确命中行优先于仅命中通用词的行
+    scored = sorted(enumerate(body), key=lambda item: (-score(item[1]), item[0]))
+    out: list[str] = list(header)
+    budget = width - header_len
+    for _, line in scored:
+        if len(line) + 1 > budget:
+            break
+        out.append(line)
+        budget -= len(line) + 1
+    shown = len(out) - len(header)
+    result = "\n".join(out)
+    if shown < len(body):
+        result += "\n…"
+    return result
+
+
 def _excerpt(text: str, question: str, width: int = 280) -> str:
     """从文本块中截取与问题最相关的一段，作为引用摘要。
 
@@ -50,10 +107,13 @@ def _excerpt(text: str, question: str, width: int = 280) -> str:
     与问题对不上（例如问题问“200 万审批”，摘要却显示“示范文本”）。这里改用
     滑动窗口：用问题分词（中文二元组 + 英文/数字整词）给每个窗口打分，取
     词面命中最多的窗口；无任何命中时退回开头。窗口非整块时加省略号提示。
+    表格块单独处理：保留表头 + 命中行，避免截断行列结构。
     """
     text = text.strip()
     if len(text) <= width:
         return text
+    if _looks_like_table(text):
+        return _excerpt_table(text, question, width)
     question_tokens = set(tokenize(question))
     step = max(1, width // 3)
     best_start = 0

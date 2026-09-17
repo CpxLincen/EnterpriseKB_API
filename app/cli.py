@@ -18,7 +18,7 @@ from sqlalchemy import select
 
 from app.models.auth import KnowledgeBaseAccess, User
 from app.core.database import SessionLocal, init_db
-from app.services.ingestion import ingest_file
+from app.services.ingestion import ingest_file_detailed, rebuild_knowledge_base
 from app.models.knowledge import KnowledgeBase
 from app.services.rag import ask
 from app.core.config import get_provider
@@ -42,18 +42,88 @@ def ingest(path: Path, knowledge_base: str = typer.Option("default", "--knowledg
     """
     init_db()  # 确保数据表已存在
     warnings_list: list[str] = []
-    with SessionLocal() as session:
-        # get_provider(for_embeddings=True) 取得 Embedding 配置
-        count = ingest_file(
-            session,
-            path,
-            knowledge_base,
-            get_provider(for_embeddings=True),
-            warnings_out=warnings_list,
-        )
+    try:
+        with SessionLocal() as session:
+            # get_provider(for_embeddings=True) 取得 Embedding 配置
+            count, stats = ingest_file_detailed(
+                session,
+                path,
+                knowledge_base,
+                get_provider(for_embeddings=True),
+                warnings_out=warnings_list,
+            )
+    except (ValueError, RuntimeError) as exc:
+        typer.echo(f"ERROR: {exc}", err=True)
+        raise typer.Exit(1) from exc
     typer.echo(f"Imported {count} chunks into knowledge base '{knowledge_base}'.")
+    meta = [f"text={stats.text_chunks}", f"table={stats.table_chunks}", f"parse={stats.parse_ms:.0f}ms"]
+    if stats.skipped_pages:
+        meta.append(f"skipped_pages={stats.skipped_pages}")
+    if stats.ocr_pages:
+        meta.append(f"ocr_pages={stats.ocr_pages}")
+    typer.echo(f"  [{', '.join(meta)}]")
     for warning in warnings_list:
         typer.echo(f"WARNING: {warning}", err=True)
+
+
+@cli.command("reingest")
+def reingest_command(
+    source_dir: Path = typer.Argument(..., help="源文档目录（按文件名匹配替换同名文档）"),
+    knowledge_base: str = typer.Option(..., "--knowledge-base", "-k", help="知识库名"),
+) -> None:
+    """按当前解析策略重导知识库（保持 Embedding 配置不变，逐文件替换同名文档）。"""
+    init_db()
+    warnings_list: list[str] = []
+    try:
+        result = rebuild_knowledge_base(
+            knowledge_base,
+            source_dir,
+            get_provider(for_embeddings=True),
+            replace_embedding=False,
+            warnings_out=warnings_list,
+        )
+    except RuntimeError as exc:
+        typer.echo(f"ERROR: {exc}", err=True)
+        raise typer.Exit(1) from exc
+    typer.echo(
+        f"Reingested '{knowledge_base}': {result.processed} files, {result.chunks} chunks."
+    )
+    for warning in warnings_list:
+        typer.echo(f"WARNING: {warning}", err=True)
+    for error in result.errors:
+        typer.echo(f"ERROR: {error}", err=True)
+    if result.errors:
+        raise typer.Exit(1)
+
+
+@cli.command("rebuild")
+def rebuild_command(
+    source_dir: Path = typer.Argument(..., help="源文档目录（目录即知识库的完整真相）"),
+    knowledge_base: str = typer.Option(..., "--knowledge-base", "-k", help="知识库名"),
+) -> None:
+    """按当前 Embedding 与解析配置重建知识库索引（清空后从目录全量重导）。"""
+    init_db()
+    warnings_list: list[str] = []
+    try:
+        result = rebuild_knowledge_base(
+            knowledge_base,
+            source_dir,
+            get_provider(for_embeddings=True),
+            replace_embedding=True,
+            warnings_out=warnings_list,
+        )
+    except RuntimeError as exc:
+        typer.echo(f"ERROR: {exc}", err=True)
+        raise typer.Exit(1) from exc
+    typer.echo(
+        f"Rebuilt '{knowledge_base}': {result.processed} files, {result.chunks} chunks."
+    )
+    for warning in warnings_list:
+        typer.echo(f"WARNING: {warning}", err=True)
+    for error in result.errors:
+        typer.echo(f"ERROR: {error}", err=True)
+    if result.errors:
+        raise typer.Exit(1)
 
 
 @cli.command("ask")

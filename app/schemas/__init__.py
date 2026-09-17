@@ -40,3 +40,9 @@ class RunEvalRequest(BaseModel):
     eval_set: str  # 评测集文件名（如 hr-eval.yaml）
     judge: bool = False  # 是否启用 LLM 裁判
     modes: list[str] = ["dense", "hybrid", "rerank"]  # 要对比的检索方式
+
+
+class KnowledgeBaseRebuildRequest(BaseModel):
+    """知识库重导 / 重建请求体：服务器本机源文档目录路径。"""
+
+    source_dir: str  # 源文档目录（绝对路径，需在服务器本机存在）

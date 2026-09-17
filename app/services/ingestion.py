@@ -25,6 +25,7 @@ import re
 import contextlib
 import io
 import threading
+import time
 import unicodedata
 import zipfile
 from dataclasses import dataclass
@@ -36,10 +37,22 @@ from pypdf import PdfReader  # 用于提取文字型 PDF 的文本
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.config import ProviderConfig
+from app.core.config import ProviderConfig, max_parse_bytes
 from app.models.knowledge import Document, DocumentChunk, KnowledgeBase
 from app.services.providers import OpenAICompatibleProvider
 from app.services.retrieval import invalidate
+
+
+# 允许导入的文档扩展名（上传白名单与 CLI 重建共用；与前端文件选择器保持一致）
+ALLOWED_SUFFIXES = {".md", ".txt", ".docx", ".pdf", ".xlsx", ".pptx", ".html", ".htm", ".epub"}
+
+# 二进制文件魔数（magic bytes），用于内容嗅探，防止伪造扩展名绕过白名单
+_PDF_MAGIC = b"%PDF-"
+_ZIP_MAGICS = (b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08")
+
+# XLSX 解压后超过该体积（100MB）时改用 openpyxl read_only 流式读取以控制内存，
+# 代价是 read_only 模式拿不到 merged_cells（合并单元格暂不展开）。
+_XLSX_STREAM_THRESHOLD = 100 * 1024 * 1024
 
 
 # 部分中文 PDF 内嵌字体的 ToUnicode 映射会把汉字映到 CJK Radicals Supplement
@@ -69,8 +82,9 @@ _CJK_RADICAL_SUPPLEMENT_MAP = {
     "\u2ef3": "\u9f9f",  # ⻳ -> 龟
 }
 
-# OOXML WordprocessingML 命名空间
+# OOXML 命名空间
 _W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+_A = "{http://schemas.openxmlformats.org/drawingml/2006/main}"
 
 # PyMuPDF 1.26+ 在进程内首次调用 find_tables() 时会 print 一条
 # “Consider using the pymupdf_layout package...” 到 stdout（仅一次）。
@@ -108,6 +122,41 @@ class ParsedBlock:
     content_type: str = "text"  # 块类型：text / table
 
 
+@dataclass
+class ParseStats:
+    """一次解析的结构化统计（供审计与 CLI 展示，避免靠解析警告字符串反推）。"""
+
+    skipped_pages: int = 0  # 无文字且未安装 OCR 的扫描页数
+    ocr_pages: int = 0  # 经 OCR 成功识别的页数
+
+
+@dataclass
+class IngestStats:
+    """一次入库的结构化统计，对应审计日志 extra 中的解析指标。"""
+
+    chunks: int = 0  # 入库块总数
+    text_chunks: int = 0  # 正文块数
+    table_chunks: int = 0  # 表格块数
+    skipped_pages: int = 0  # 扫描页跳过数
+    ocr_pages: int = 0  # OCR 识别页数
+    format: str = ""  # 文件扩展名（小写，含点）
+    parse_ms: float = 0.0  # 解析（读文件 + 切块）耗时，毫秒
+
+
+@dataclass
+class RebuildResult:
+    """一次知识库重建（reingest / rebuild）的结果汇总。"""
+
+    kb_name: str  # 知识库名
+    processed: int = 0  # 成功处理的文件数
+    chunks: int = 0  # 重建后入库块总数
+    errors: list[str] | None = None  # 单文件失败信息（文件名: 原因）
+
+    def __post_init__(self) -> None:
+        if self.errors is None:
+            self.errors = []
+
+
 def normalize_text(text: str) -> str:
     """把提取出的文本规范化，修复中文 PDF 的偏旁/兼容字符问题。"""
     text = unicodedata.normalize("NFKC", text or "")
@@ -115,10 +164,121 @@ def normalize_text(text: str) -> str:
     return re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f]", " ", text)
 
 
-def _table_to_markdown(rows: list[list[str]], caption: str | None = None) -> str:
+def _decode_text_file(path: Path) -> str:
+    """读取文本类文件，按多编码探测解码：UTF-8 → charset-normalizer → GB18030。
+
+    UTF-8 优先（最常见、无损）；charset-normalizer 智能探测区分 GBK/GB18030/Big5 等
+    本地编码；GB18030 作为探测不可用时的兜底（GBK/GB2312 的超集，覆盖绝大多数简体中文）。
+    全部失败时给出明确错误而非抛出 UnicodeDecodeError。
+    """
+    raw = path.read_bytes()
+    try:
+        return raw.decode("utf-8")
+    except UnicodeDecodeError:
+        pass
+    try:
+        from charset_normalizer import from_bytes
+
+        best = from_bytes(raw).best()
+        if best is not None:
+            return str(best)
+    except ImportError:
+        pass
+    try:
+        return raw.decode("gb18030")
+    except UnicodeDecodeError:
+        pass
+    raise ValueError(
+        f"Cannot decode '{path.name}' as UTF-8/GB18030; convert it to UTF-8 and retry."
+    )
+
+
+def _zip_total_size(path: Path) -> int:
+    """返回 ZIP 容器解压后的总体积（字节）；解不开返回 0。"""
+    try:
+        with zipfile.ZipFile(path) as zf:
+            return sum(info.file_size for info in zf.infolist())
+    except (zipfile.BadZipFile, OSError):
+        return 0
+
+
+def _check_zip_expansion(path: Path, limit: int | None = None) -> None:
+    """检查 ZIP 容器解压后的总体积，超限抛 ValueError（防 zip bomb / 超大 XML）。"""
+    total = _zip_total_size(path)
+    if total > (limit if limit is not None else max_parse_bytes()):
+        raise ValueError(
+            f"Document expands to {total} bytes, exceeding the parse limit. "
+            "Split the document or raise MAX_PARSE_BYTES."
+        )
+
+
+def _sniff_zip(path: Path) -> str | None:
+    """识别 ZIP 容器类的 OOXML / EPUB：打开压缩包按内部结构判断真实格式。"""
+    try:
+        with zipfile.ZipFile(path) as zf:
+            names = {n.lower() for n in zf.namelist()}
+    except (zipfile.BadZipFile, OSError):
+        return None  # 打不开的 zip 交给 read_* 报明确错误，嗅探不抢报
+    if "word/document.xml" in names:
+        return ".docx"
+    if "xl/workbook.xml" in names:
+        return ".xlsx"
+    if "ppt/presentation.xml" in names:
+        return ".pptx"
+    if "meta-inf/container.xml" in names and any(n.endswith(".opf") for n in names):
+        return ".epub"
+    return None
+
+
+def _sniff_text_markup(path: Path) -> str | None:
+    """识别 HTML 文本标记（严格匹配 <!doctype html 或 <html 前缀，避免误伤含代码示例的 md）。"""
+    try:
+        with path.open("rb") as f:
+            head = f.read(512).decode("utf-8", "ignore").lstrip().lower()
+    except OSError:
+        return None
+    if head.startswith("<!doctype html") or head.startswith("<html"):
+        return ".html"
+    return None
+
+
+def sniff_format(path: Path) -> str | None:
+    """用 magic bytes + 内部结构识别文件真实类型，返回规范后缀（小写、含点）。
+
+    纯文本类（.md/.txt）与未知内容返回 None（无可靠二进制签名，交由 read_* 按扩展名处理）。
+    返回非 None 时表示有明确签名，调用方据此与扩展名交叉校验。
+    """
+    try:
+        with path.open("rb") as f:
+            head = f.read(8)
+    except OSError:
+        return None
+    if head.startswith(_PDF_MAGIC):
+        return ".pdf"
+    if head.startswith(_ZIP_MAGICS):
+        return _sniff_zip(path)
+    return _sniff_text_markup(path)
+
+
+def validate_file_type(path: Path, suffix: str) -> None:
+    """校验文件真实内容与扩展名一致，不一致抛 ValueError（防止伪造扩展名绕过白名单）。
+
+    仅对能识别出明确二进制签名的格式做校验；纯文本类无法用魔数区分，放行由 read_* 处理。
+    """
+    real = sniff_format(path)
+    if real is not None and real != suffix:
+        raise ValueError(
+            f"File content is actually '{real}', but the extension is '{suffix}'. "
+            "Rejected for safety (mismatched file type)."
+        )
+
+
+def _table_to_markdown(rows: list[list[str]], caption: str | None = None, *, enrich_cells: bool = True) -> str:
     """把二维单元格列表转成 Markdown 表格文本（第一行视为表头）。
 
     处理不等长行（补空单元格）、过滤全空行；返回空字符串表示没有可用内容。
+    enrich_cells=True 时把表头合入每个非空数据单元格（`列名：值`），使每个单元格自包含，
+    提升向量检索 / BM25 对“列名 ↔ 值”跨列关系的召回（表格语义增强）。
     """
     cleaned: list[list[str]] = []
     for row in rows:
@@ -133,10 +293,18 @@ def _table_to_markdown(rows: list[list[str]], caption: str | None = None) -> str
     lines: list[str] = []
     if caption:
         lines.append(f"【{caption}】")
-    lines.append("| " + " | ".join(cleaned[0]) + " |")
+    header = cleaned[0]
+    lines.append("| " + " | ".join(header) + " |")
     lines.append("| " + " | ".join(["---"] * ncols) + " |")
     for row in cleaned[1:]:
-        lines.append("| " + " | ".join(row) + " |")
+        if enrich_cells:
+            cells = [
+                f"{header[c]}：{row[c]}" if (header[c] and row[c]) else (row[c] or "")
+                for c in range(ncols)
+            ]
+        else:
+            cells = row
+        lines.append("| " + " | ".join(cells) + " |")
     return "\n".join(lines)
 
 
@@ -208,6 +376,7 @@ def read_docx(path: Path) -> list[ParsedBlock]:
     不引入 python-docx，直接解包 word/document.xml，按 body 子元素顺序遍历，
     段落用 <w:p> 提取、表格用 <w:tbl> 转 Markdown，两者顺序与原文一致。
     """
+    _check_zip_expansion(path)
     try:
         with zipfile.ZipFile(path) as zf:
             xml_bytes = zf.read("word/document.xml")
@@ -233,25 +402,26 @@ def read_docx(path: Path) -> list[ParsedBlock]:
 def read_xlsx(path: Path) -> list[ParsedBlock]:
     """读取 .xlsx：逐 sheet 把有效行转成 Markdown 表格（整 sheet 视为一张表）。
 
-    使用非 read_only 模式以读取合并单元格（read_only 模式无 merged_cells），
-    对每个合并区域把左上角值填充到区域内所有单元格，避免行列错位。
+    小文件使用非 read_only 模式以读取合并单元格（read_only 模式无 merged_cells），
+    对每个合并区域把左上角值填充到区域内所有单元格；解压后超过 100MB 的大文件改用
+    read_only 流式读取以控制内存（合并单元格暂不展开）。
     """
     try:
         import openpyxl
     except ImportError as exc:
         raise ValueError("Reading .xlsx requires openpyxl. Run: pip install openpyxl") from exc
+    _check_zip_expansion(path)
+    use_read_only = _zip_total_size(path) > _XLSX_STREAM_THRESHOLD
     try:
-        workbook = openpyxl.load_workbook(path, data_only=True)
+        workbook = openpyxl.load_workbook(path, read_only=use_read_only, data_only=True)
     except Exception as exc:  # noqa: BLE001 - 解析失败统一转为 ValueError
         raise ValueError(f"Cannot parse '{path.name}' as a .xlsx file.") from exc
     blocks: list[ParsedBlock] = []
     try:
         for ws in workbook.worksheets:
-            merged_ranges = list(ws.merged_cells.ranges)
+            merged_ranges = [] if use_read_only else list(ws.merged_cells.ranges)
             rows: list[list[str]] = []
-            for row in ws.iter_rows(
-                min_row=1, max_row=ws.max_row, max_col=ws.max_column, values_only=True
-            ):
+            for row in ws.iter_rows(values_only=True):
                 cells = ["" if v is None else str(v) for v in row]
                 rows.append(cells)
             if not rows:
@@ -271,35 +441,142 @@ def read_xlsx(path: Path) -> list[ParsedBlock]:
     return blocks
 
 
+def _pptx_tc_text(tc: ElementTree.Element) -> str:
+    """提取 DrawingML 单元格（a:tc）内全部 a:t 文本，段落用换行连接。"""
+    parts: list[str] = []
+    for p in tc.iter(_A + "p"):
+        line = "".join(t.text or "" for t in p.iter(_A + "t"))
+        if line.strip():
+            parts.append(line)
+    return "\n".join(parts)
+
+
+def _pptx_table_markdown(tbl: ElementTree.Element) -> str:
+    """把 DrawingML 表格（a:tbl）转 Markdown，展开 gridSpan / rowSpan 合并单元格。
+
+    算法：按 tblGrid 列数建立网格；遍历每行的 a:tc，gridSpan 横向复制展开，
+    rowSpan 把起始格文本记录到 occupied，后续行对应列回填；行尾 rowSpan 占位补空。
+    """
+    grid_cols = len(tbl.findall(_A + "tblGrid/" + _A + "gridCol"))
+    occupied: dict[tuple[int, int], str] = {}
+    rows: list[list[str]] = []
+    for ri, tr in enumerate(tbl.findall(_A + "tr")):
+        cells: list[str] = []
+        ci = 0
+        for tc in tr.findall(_A + "tc"):
+            # 跳过被上方 rowSpan 占用的列
+            while (ri, ci) in occupied:
+                cells.append(occupied[(ri, ci)])
+                ci += 1
+            span = max(1, int(tc.get("gridSpan") or 1))
+            row_span = max(1, int(tc.get("rowSpan") or 1))
+            text = _pptx_tc_text(tc)
+            for _ in range(span):
+                cells.append(text)
+            if row_span > 1:
+                for rr in range(1, row_span):
+                    for cc in range(span):
+                        occupied[(ri + rr, ci + cc)] = text
+            ci += span
+        # 补齐行尾被 rowSpan 占用的列
+        while ci < grid_cols:
+            cells.append(occupied.get((ri, ci), ""))
+            ci += 1
+        rows.append(cells)
+    return _table_to_markdown(rows)
+
+
 def read_pptx(path: Path) -> list[ParsedBlock]:
     """读取 .pptx：逐页提取标题/正文/表格（表格转 Markdown），每页一个块。"""
     try:
         from pptx import Presentation
     except ImportError as exc:
         raise ValueError("Reading .pptx requires python-pptx. Run: pip install python-pptx") from exc
+    _check_zip_expansion(path)
     try:
         prs = Presentation(path)
     except Exception as exc:  # noqa: BLE001
         raise ValueError(f"Cannot parse '{path.name}' as a .pptx file.") from exc
     blocks: list[ParsedBlock] = []
     for index, slide in enumerate(prs.slides, start=1):
-        parts: list[str] = []
+        parts: list[tuple[str, str]] = []  # (kind, text)，kind ∈ text / table
         for shape in slide.shapes:
             if getattr(shape, "has_table", False):
-                table = shape.table
-                rows = [[cell.text for cell in row.cells] for row in table.rows]
-                md = _table_to_markdown(rows)
+                tbl = shape._element.find(".//" + _A + "tbl")
+                md = _pptx_table_markdown(tbl) if tbl is not None else ""
                 if md:
-                    parts.append(md)
+                    parts.append(("table", md))
             elif getattr(shape, "has_text_frame", False):
+                lines: list[str] = []
                 for para in shape.text_frame.paragraphs:
                     line = "".join(run.text for run in para.runs).strip()
                     if line:
-                        parts.append(line)
-        content = "\n".join(parts).strip()
-        if content:
-            blocks.append(ParsedBlock(normalize_text(content), index, "text"))
+                        lines.append(line)
+                if lines:
+                    parts.append(("text", "\n".join(lines)))
+        # 相邻 text 片段合并，表格独立成块，保持出现顺序
+        merged: list[tuple[str, str]] = []
+        for kind, text in parts:
+            if merged and kind == "text" and merged[-1][0] == "text":
+                merged[-1] = ("text", merged[-1][1] + "\n" + text)
+            else:
+                merged.append((kind, text))
+        for kind, text in merged:
+            blocks.append(ParsedBlock(normalize_text(text), index, kind))
     return blocks
+
+
+def _parse_span(value: str | None) -> int:
+    """解析 colspan / rowspan 属性为整数（缺省或非法按 1 处理）。"""
+    try:
+        return max(1, int(value or 1))
+    except (TypeError, ValueError):
+        return 1
+
+
+def _expand_html_table(rows_data: list[list[tuple[str, int, int]]]) -> list[list[str]]:
+    """把带 colspan/rowspan 的 HTML 表格单元格流展平成规则二维网格。
+
+    rows_data 每行是 (text, colspan, rowspan) 列表。colspan 横向复制展开；
+    rowspan 把起始格文本记录到 occupied，后续行对应列回填，行尾占位补空。
+    """
+    if not rows_data:
+        return []
+    occupied: dict[tuple[int, int], str] = {}
+    row_end: dict[int, int] = {}
+    for ri, row in enumerate(rows_data):
+        ci = 0
+        for text, colspan, rowspan in row:
+            while (ri, ci) in occupied:
+                ci += 1
+            colspan = max(1, colspan)
+            rowspan = max(1, rowspan)
+            if rowspan > 1:
+                for rr in range(1, rowspan):
+                    for cc in range(colspan):
+                        occupied[(ri + rr, ci + cc)] = text
+            ci += colspan
+        row_end[ri] = ci
+    max_cols = max(row_end.values(), default=0)
+    if occupied:
+        max_cols = max(max_cols, max(c for _, c in occupied) + 1)
+    grid: list[list[str]] = []
+    for ri, row in enumerate(rows_data):
+        cells: list[str] = []
+        ci = 0
+        for text, colspan, _rowspan in row:
+            while (ri, ci) in occupied:
+                cells.append(occupied[(ri, ci)])
+                ci += 1
+            colspan = max(1, colspan)
+            for _ in range(colspan):
+                cells.append(text)
+            ci += colspan
+        while ci < max_cols:
+            cells.append(occupied.get((ri, ci), ""))
+            ci += 1
+        grid.append(cells)
+    return grid
 
 
 class _HTMLTextExtractor(HTMLParser):
@@ -322,10 +599,12 @@ class _HTMLTextExtractor(HTMLParser):
         self._skip_depth = 0
         self._text_buf: list[str] = []
         self._in_table = False
-        self._rows: list[list[str]] = []
-        self._row: list[str] = []
+        self._rows_data: list[list[tuple[str, int, int]]] = []
+        self._row_cells: list[tuple[str, int, int]] = []
         self._in_cell = False
         self._cell_buf: list[str] = []
+        self._cell_colspan = 1
+        self._cell_rowspan = 1
 
     def _flush_text(self) -> None:
         text = "".join(self._text_buf)
@@ -337,12 +616,12 @@ class _HTMLTextExtractor(HTMLParser):
         self._text_buf = []
 
     def _flush_table(self) -> None:
-        if self._rows:
-            md = _table_to_markdown(self._rows)
+        if self._rows_data:
+            md = _table_to_markdown(_expand_html_table(self._rows_data))
             if md:
                 self.blocks.append(ParsedBlock(md, None, "table"))
-        self._rows = []
-        self._row = []
+        self._rows_data = []
+        self._row_cells = []
 
     def finalize(self) -> None:
         """冲刷未闭合的普通文本缓冲与表格缓冲。"""
@@ -359,14 +638,17 @@ class _HTMLTextExtractor(HTMLParser):
         if tag == "table":
             self._flush_text()
             self._in_table = True
-            self._rows = []
+            self._rows_data = []
             return
         if self._in_table:
             if tag == "tr":
-                self._row = []
+                self._row_cells = []
             elif tag in {"td", "th"}:
                 self._in_cell = True
                 self._cell_buf = []
+                attr = dict(attrs or [])
+                self._cell_colspan = _parse_span(attr.get("colspan"))
+                self._cell_rowspan = _parse_span(attr.get("rowspan"))
             return
         if tag in {"h1", "h2", "h3", "h4", "h5", "h6"}:
             level = int(tag[1])
@@ -389,13 +671,13 @@ class _HTMLTextExtractor(HTMLParser):
             if tag in {"td", "th"}:
                 cell = "".join(self._cell_buf)
                 cell = re.sub(r"\s+", " ", cell).strip()
-                self._row.append(cell)
+                self._row_cells.append((cell, self._cell_colspan, self._cell_rowspan))
                 self._in_cell = False
                 self._cell_buf = []
             elif tag == "tr":
-                if self._row:
-                    self._rows.append(self._row)
-                self._row = []
+                if self._row_cells:
+                    self._rows_data.append(self._row_cells)
+                self._row_cells = []
             return
         if tag in self._BLOCK_TAGS or tag in {"h1", "h2", "h3", "h4", "h5", "h6"}:
             self._text_buf.append("\n")
@@ -431,11 +713,7 @@ def _extract_html(html_text: str) -> list[ParsedBlock]:
 
 def read_html(path: Path) -> list[ParsedBlock]:
     """读取 .html / .htm 文件，提取正文与表格。"""
-    try:
-        raw = path.read_text(encoding="utf-8")
-    except UnicodeDecodeError:
-        raw = path.read_text(encoding="gb18030")
-    return _extract_html(raw)
+    return _extract_html(_decode_text_file(path))
 
 
 def _resolve_zip_path(base_dir: str, href: str) -> str | None:
@@ -448,6 +726,7 @@ def _resolve_zip_path(base_dir: str, href: str) -> str | None:
 
 def read_epub(path: Path) -> list[ParsedBlock]:
     """读取 .epub：按 OPF spine 顺序解析各 XHTML 章节，提取正文与表格。"""
+    _check_zip_expansion(path)
     try:
         with zipfile.ZipFile(path) as zf:
             names = set(zf.namelist())
@@ -685,12 +964,17 @@ def _detect_borderless_tables(
     return tables
 
 
-def _read_pdf_pymupdf(path: Path, warnings_out: list[str] | None) -> list[ParsedBlock]:
+def _read_pdf_pymupdf(
+    path: Path,
+    warnings_out: list[str] | None,
+    stats: ParseStats | None = None,
+) -> list[ParsedBlock]:
     """用 PyMuPDF 读取 PDF：表格转 Markdown + 正文提取 + 扫描页 OCR/警告。"""
     fitz = _import_pymupdf()
     doc = fitz.open(str(path))
     blocks: list[ParsedBlock] = []
     scanned_pages: list[int] = []
+    ocr_pages = 0
     try:
         for page_index in range(len(doc)):
             page = doc[page_index]
@@ -723,6 +1007,7 @@ def _read_pdf_pymupdf(path: Path, warnings_out: list[str] | None) -> list[Parsed
                 ocr_text = _ocr_page(page)
                 if ocr_text:
                     blocks.append(ParsedBlock(ocr_text, page_num, "text"))
+                    ocr_pages += 1
                 else:
                     scanned_pages.append(page_num)
                 continue
@@ -736,6 +1021,9 @@ def _read_pdf_pymupdf(path: Path, warnings_out: list[str] | None) -> list[Parsed
                 blocks.append(ParsedBlock(payload, page_num, kind))
     finally:
         doc.close()
+    if stats is not None:
+        stats.skipped_pages += len(scanned_pages)
+        stats.ocr_pages += ocr_pages
     if scanned_pages:
         _add_warning(
             warnings_out,
@@ -749,7 +1037,11 @@ def _read_pdf_pymupdf(path: Path, warnings_out: list[str] | None) -> list[Parsed
     return blocks
 
 
-def _read_pdf_pypdf(path: Path, warnings_out: list[str] | None) -> list[ParsedBlock]:
+def _read_pdf_pypdf(
+    path: Path,
+    warnings_out: list[str] | None,
+    stats: ParseStats | None = None,
+) -> list[ParsedBlock]:
     """pypdf 降级路径：仅纯文本提取（无表格、无 OCR），保留既有 normalize 管线。"""
     reader = PdfReader(path)
     blocks: list[ParsedBlock] = []
@@ -760,6 +1052,8 @@ def _read_pdf_pypdf(path: Path, warnings_out: list[str] | None) -> list[ParsedBl
             blocks.append(ParsedBlock(text, index + 1, "text"))
         else:
             scanned_pages.append(index + 1)
+    if stats is not None:
+        stats.skipped_pages += len(scanned_pages)
     if not blocks:
         raise ValueError(
             f"'{path.name}' 无可提取文字（疑似扫描件）。"
@@ -773,21 +1067,29 @@ def _read_pdf_pypdf(path: Path, warnings_out: list[str] | None) -> list[ParsedBl
     return blocks
 
 
-def read_pdf(path: Path, warnings_out: list[str] | None = None) -> list[ParsedBlock]:
+def read_pdf(
+    path: Path,
+    warnings_out: list[str] | None = None,
+    stats: ParseStats | None = None,
+) -> list[ParsedBlock]:
     """读取 PDF：优先 PyMuPDF（表格结构化 + 扫描页 OCR），不可用时降级 pypdf。"""
     try:
         _import_pymupdf()
     except ImportError:
-        return _read_pdf_pypdf(path, warnings_out)
+        return _read_pdf_pypdf(path, warnings_out, stats)
     try:
-        return _read_pdf_pymupdf(path, warnings_out)
+        return _read_pdf_pymupdf(path, warnings_out, stats)
     except ValueError:
         raise
     except Exception:  # noqa: BLE001 - PyMuPDF 解析异常时降级 pypdf，保证可导入
-        return _read_pdf_pypdf(path, warnings_out)
+        return _read_pdf_pypdf(path, warnings_out, stats)
 
 
-def read_document(path: Path, warnings_out: list[str] | None = None) -> list[ParsedBlock]:
+def read_document(
+    path: Path,
+    warnings_out: list[str] | None = None,
+    stats: ParseStats | None = None,
+) -> list[ParsedBlock]:
     """读取文档，返回结构化片段列表（每个片段带页码与块类型）。
 
     支持格式：.md / .txt / .pdf / .docx / .xlsx / .pptx / .html / .htm / .epub。
@@ -795,7 +1097,7 @@ def read_document(path: Path, warnings_out: list[str] | None = None) -> list[Par
     """
     suffix = path.suffix.lower()
     if suffix == ".pdf":
-        return read_pdf(path, warnings_out)
+        return read_pdf(path, warnings_out, stats)
     if suffix == ".docx":
         return read_docx(path)
     if suffix == ".xlsx":
@@ -810,16 +1112,8 @@ def read_document(path: Path, warnings_out: list[str] | None = None) -> list[Par
         raise ValueError(
             "Only .md, .txt, .docx, .xlsx, .pptx, .html, .epub, and text-based .pdf files are supported."
         )
-    # Markdown / TXT：优先 UTF-8，失败降级 GB18030
-    try:
-        return [ParsedBlock(normalize_text(path.read_text(encoding="utf-8")), None, "text")]
-    except UnicodeDecodeError:
-        try:
-            return [ParsedBlock(normalize_text(path.read_text(encoding="gb18030")), None, "text")]
-        except UnicodeDecodeError as exc:
-            raise ValueError(
-                f"Cannot decode '{path.name}' as UTF-8 or GB18030; convert it to UTF-8 and retry."
-            ) from exc
+    # Markdown / TXT：多编码探测解码（UTF-8 → GB18030 → charset-normalizer）
+    return [ParsedBlock(normalize_text(_decode_text_file(path)), None, "text")]
 
 
 def chunk_text(text: str, size: int = 650, overlap: int = 80) -> list[str]:
@@ -839,15 +1133,56 @@ def chunk_text(text: str, size: int = 650, overlap: int = 80) -> list[str]:
 
 
 def chunk_table_text(text: str, size: int = 650) -> list[str]:
-    """把 Markdown 表格文本按“完整行”切块，避免拆散行列结构。
+    """把 Markdown 表格文本按“完整行”切块，超长时每个后续块重复「表头 + 分隔行」。
 
-    表格块通常较短（一个表格一行条目的字符数有限），这里仅在超长时按行累加切分；
-    表头与分隔行只出现在首块，后续块从内容行继续。单行超长时按 size 硬切兜底。
+    表格块通常较短；超长表格（条目很多）按完整行累加切分，不拆散行列结构；
+    从第二块起前置重复表头与分隔行（|---|---|），保证每块都能独立表达列语义，
+    检索 / LLM 能对上列名。单行超长（超宽单元格）时按 size 硬切兜底。
     """
     text = text.strip()
     if len(text) <= size:
         return [text]
     lines = text.split("\n")
+    # 定位表头行：第一个以 '|' 开头的行；其后若为分隔行（仅含 | - : 空格）则一并视为表头块
+    header_idx = next((i for i, line in enumerate(lines) if line.lstrip().startswith("|")), None)
+    if header_idx is None:
+        return _chunk_lines(lines, size)  # 非标准表格，退回普通按行切块
+    sep_idx = header_idx + 1
+    separator_ok = (
+        sep_idx < len(lines)
+        and lines[sep_idx].lstrip().startswith("|")
+        and all(ch in "|-: " for ch in lines[sep_idx])
+    )
+    head_end = sep_idx + 1 if separator_ok else header_idx + 1
+    header_block = lines[header_idx:head_end]  # 表头（+分隔行），后续块重复
+    body = lines[head_end:]
+    # 首块包含 caption（【...】）等前缀 + 表头；后续块 = 表头块 + 内容行
+    chunks: list[str] = []
+    buf: list[str] = list(lines[:head_end])
+    buf_len = sum(len(l) + 1 for l in buf)
+    has_body = False
+    for line in body:
+        if len(line) > size:
+            # 单行超长（如超宽表格单元格）：先冲刷已累积内容，再对超长行硬切
+            if has_body:
+                chunks.append("\n".join(buf))
+                buf, buf_len = list(header_block), sum(len(l) + 1 for l in header_block)
+                has_body = False
+            chunks.extend(line[i : i + size] for i in range(0, len(line), size))
+            continue
+        if has_body and buf_len + len(line) + 1 > size:
+            chunks.append("\n".join(buf))
+            buf, buf_len = list(header_block), sum(len(l) + 1 for l in header_block)
+            has_body = False
+        buf.append(line)
+        buf_len += len(line) + 1
+        has_body = True
+    chunks.append("\n".join(buf))
+    return [chunk for chunk in chunks if chunk.strip()]
+
+
+def _chunk_lines(lines: list[str], size: int) -> list[str]:
+    """按行累加切块（无表头语义时的通用兜底），单行超长按 size 硬切。"""
     chunks: list[str] = []
     buf: list[str] = []
     buf_len = 0
@@ -890,13 +1225,44 @@ def ingest_file(
     display_filename: str | None = None,
     warnings_out: list[str] | None = None,
 ) -> int:
-    """导入单个文件到指定知识库。
+    """导入单个文件到指定知识库（返回入库块数；详见 ingest_file_detailed）。
 
-    流程：读文件 -> 计算内容哈希 -> 找到/创建知识库 -> 内容去重 -> 切块 ->
-    批量 Embedding -> 写入 documents 与 document_chunks。
+    保留此签名以维持向后兼容；需要结构化指标的调用方改用 ingest_file_detailed()。
+    """
+    chunks, _ = ingest_file_detailed(
+        session,
+        path,
+        kb_name,
+        provider_config,
+        display_filename=display_filename,
+        warnings_out=warnings_out,
+    )
+    return chunks
+
+
+def ingest_file_detailed(
+    session: Session,
+    path: Path,
+    kb_name: str,
+    provider_config: ProviderConfig,
+    display_filename: str | None = None,
+    warnings_out: list[str] | None = None,
+) -> tuple[int, IngestStats]:
+    """导入单个文件到指定知识库，并返回入库块数与结构化统计。
+
+    流程：内容嗅探 -> 读文件 -> 计算内容哈希 -> 找到/创建知识库 -> 内容去重 ->
+    切块 -> 批量 Embedding -> 写入 documents 与 document_chunks。
     warnings_out 可选，用于收集解析过程中的非致命警告（由调用方展示/打印）。
     """
+    stats = IngestStats(format=path.suffix.lower())
+    # 安全：校验文件真实内容与扩展名一致，防止伪造扩展名绕过白名单
+    validate_file_type(path, stats.format)
     raw = path.read_bytes()
+    if len(raw) > max_parse_bytes():
+        raise ValueError(
+            f"Document is {len(raw)} bytes, exceeding the {max_parse_bytes()}-byte parse limit. "
+            "Split the document or raise MAX_PARSE_BYTES."
+        )
     digest = hashlib.sha256(raw).hexdigest()
     kb = session.scalar(select(KnowledgeBase).where(KnowledgeBase.name == kb_name))
     if not kb:
@@ -918,9 +1284,15 @@ def ingest_file(
         select(Document).where(Document.knowledge_base_id == kb.id, Document.content_hash == digest)
     )
     if existing:
-        return 0
-    blocks = read_document(path, warnings_out)
+        return 0, stats
+    # 解析（读文件 + 切块）单独计时，不把 Embedding 网络耗时混入 parse_ms
+    parse_start = time.perf_counter()
+    parse_stats = ParseStats()
+    blocks = read_document(path, warnings_out, parse_stats)
     pieces = _split_blocks(blocks)
+    stats.parse_ms = (time.perf_counter() - parse_start) * 1000
+    stats.skipped_pages = parse_stats.skipped_pages
+    stats.ocr_pages = parse_stats.ocr_pages
     if not pieces:
         raise ValueError("No readable text found in document.")
     provider = OpenAICompatibleProvider(provider_config)
@@ -941,4 +1313,85 @@ def ingest_file(
     )
     session.commit()
     invalidate(kb.id)
-    return len(pieces)
+    stats.chunks = len(pieces)
+    stats.text_chunks = sum(1 for _, _, ct in pieces if ct == "text")
+    stats.table_chunks = sum(1 for _, _, ct in pieces if ct == "table")
+    return len(pieces), stats
+
+
+def rebuild_knowledge_base(
+    kb_name: str,
+    source_dir: Path,
+    provider_config: ProviderConfig,
+    *,
+    replace_embedding: bool = False,
+    warnings_out: list[str] | None = None,
+) -> RebuildResult:
+    """从源目录重建知识库：逐文件重新解析 + 向量化，文件级事务替换。
+
+    - replace_embedding=True（rebuild）：先清空该库全部文档（级联删除文本块）并更新
+      embedding 模型/维度，再按目录重建。用于更换 Embedding 模型/维度或彻底重建索引。
+    - replace_embedding=False（reingest）：保持库的 embedding 配置不变，按文件名替换
+      同名文档（旧数据重导以区分 text/table 等新解析策略）。库配置与当前不一致时报错。
+
+    单文件失败不阻断其余文件：先标记删除同名旧文档、再入库，两者在同一事务提交；
+    若该文件解析或 Embedding 失败则回滚，旧文档保持不变，错误记入 result.errors。
+    """
+    from app.core.database import SessionLocal
+
+    source_dir = Path(source_dir)
+    if not source_dir.is_dir():
+        raise RuntimeError(f"Source directory '{source_dir}' does not exist.")
+    files = sorted(
+        f for f in source_dir.iterdir()
+        if f.is_file() and f.suffix.lower() in ALLOWED_SUFFIXES
+    )
+    result = RebuildResult(kb_name=kb_name)
+    with SessionLocal() as session:
+        kb = session.scalar(select(KnowledgeBase).where(KnowledgeBase.name == kb_name))
+        if not kb:
+            raise RuntimeError(f"Knowledge base '{kb_name}' does not exist.")
+        if replace_embedding:
+            if not provider_config.embedding_model or not provider_config.embedding_dimensions:
+                raise RuntimeError("Embedding model and dimensions must be configured.")
+            # ORM 逐条删除以触发 relationship 级联删除文本块（表无 ON DELETE CASCADE）
+            for doc in session.scalars(
+                select(Document).where(Document.knowledge_base_id == kb.id)
+            ).all():
+                session.delete(doc)
+            kb.embedding_model = provider_config.embedding_model
+            kb.embedding_dimensions = provider_config.embedding_dimensions
+            session.commit()
+        elif (
+            kb.embedding_model != provider_config.embedding_model
+            or kb.embedding_dimensions != provider_config.embedding_dimensions
+        ):
+            raise RuntimeError(
+                "This knowledge base uses a different embedding model/dimension. "
+                "Use 'rebuild' instead of 'reingest'."
+            )
+        for file in files:
+            try:
+                # 替换同名文档：先标记删除旧文档（级联文本块），与后续 ingest 同一事务提交
+                existing = session.scalar(
+                    select(Document).where(
+                        Document.knowledge_base_id == kb.id,
+                        Document.filename == file.name,
+                    )
+                )
+                if existing:
+                    session.delete(existing)
+                chunks, _ = ingest_file_detailed(
+                    session,
+                    file,
+                    kb_name,
+                    provider_config,
+                    display_filename=file.name,
+                    warnings_out=warnings_out,
+                )
+                result.processed += 1
+                result.chunks += chunks
+            except Exception as exc:  # noqa: BLE001 - 单文件失败不阻断其余文件
+                session.rollback()
+                result.errors.append(f"{file.name}: {exc}")
+    return result
