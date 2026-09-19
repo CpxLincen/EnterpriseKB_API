@@ -19,5 +19,6 @@ python-pptx>=0.6.23,<2.0
 pymupdf>=1.24,<2.0
 # Rerank（BGE 交叉编码器重排）为可选重依赖：会带入 torch，体积较大，
 # 不在基础运行时依赖内。需要启用 rerank 时安装 requirements-rerank.txt。
-# 扫描 PDF OCR（可选；未安装时扫描 PDF 会提示无法提取文字）
-# rapidocr-onnxruntime>=1.3
+# 扫描 PDF OCR（可选；未安装时扫描 PDF 会提示无法提取文字）。
+# 需 >=1.4.0：该版本起放宽 numpy 约束为 numpy<3.0，可与 numpy 2.x / torch 2.x 共存。
+# rapidocr-onnxruntime>=1.4.0,<2.0

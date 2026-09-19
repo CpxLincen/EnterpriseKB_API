@@ -1,9 +1,10 @@
-# 依赖锁定文件（2026-09-19 由当前 .venv 实测生成，经 pytest 31 例 + 冒烟 + compileall 验证）。
+# 依赖锁定文件（2026-09-19 由当前 .venv 实测生成，经 pytest 50 例 + 冒烟 + compileall 验证）。
 # 用途：可复现构建（CI / 部署 / 队友环境）。仅锁直接依赖；运行时依赖不含 rerank/OCR 可选重依赖。
 #
 # 注意（问题 #19 的「兼容矩阵」部分仍待办）：
-#   rapidocr-onnxruntime / onnxruntime 与 numpy/torch 的版本矩阵尚未在本仓库实测，
-#   需在独立环境验证后再补锁（当前 .venv 未安装，以避免与 torch 2.13.0+cu126 冲突）。
+#   已确认 rapidocr-onnxruntime>=1.4.0 放宽为 numpy<3.0，可与 numpy 2.2.6 共存；
+#   但安装实测（onnxruntime/opencv-python/shapely/pyclipper/rapidocr-onnxruntime）
+#   因当前网络受限未完成，需在具备 PyPI 网络的环境跑通 OCR 冒烟后再补锁精确版本。
 fastapi==0.141.1
 uvicorn[standard]==0.52.4
 typer==0.27.1
