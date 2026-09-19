@@ -252,3 +252,13 @@ docker compose -f docker-compose.deploy.yml restart backend # 重启后端
 4. 后端上传另有 `MAX_UPLOAD_BYTES`（默认 100MB）与扩展名白名单校验，请与 Nginx 的
    `client_max_body_size` 保持一致。
 5. 审计日志默认输出到容器 stdout，可用 `AUDIT_LOG_FILE` 落盘或接入日志采集。
+6. **Rerank 模型分发（约 2.3GB，不随代码入镜像）**：重排需要本地权重
+   `models/bge-reranker-v2-m3`（`.gitignore` 排除）。两种方式二选一：
+   - **挂载数据卷（推荐，简单）**：先在宿主机用
+     `scripts/download-rerank-model.ps1` 下载到宿主机目录，再在
+     `docker-compose.deploy.yml` 的 backend 服务加一行 volume，把该目录挂到容器内与
+     `config/models.yaml` 的 `retrieval.rerank.model` 一致的路径；
+    - **构建进镜像**：修改 `Dockerfile`，在 `pip install` 之后执行模型下载（需 `modelscope`
+      或 `huggingface-cli` 与构建网络），镜像体积将显著增大。
+7. **老格式（.doc/.xls/.ppt/.rtf/.odt/.ods/.odp）不支持入库**：入库时会被筛除并提示
+   先转换为对应新格式（`.docx/.xlsx/.pptx`），请在上传前完成转换。

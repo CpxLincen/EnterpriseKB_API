@@ -1,0 +1,25 @@
+# 依赖锁定文件（2026-09-19 由当前 .venv 实测生成，经 pytest 31 例 + 冒烟 + compileall 验证）。
+# 用途：可复现构建（CI / 部署 / 队友环境）。仅锁直接依赖；运行时依赖不含 rerank/OCR 可选重依赖。
+#
+# 注意（问题 #19 的「兼容矩阵」部分仍待办）：
+#   rapidocr-onnxruntime / onnxruntime 与 numpy/torch 的版本矩阵尚未在本仓库实测，
+#   需在独立环境验证后再补锁（当前 .venv 未安装，以避免与 torch 2.13.0+cu126 冲突）。
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
+typer==0.27.1
+sqlalchemy==2.0.52
+psycopg[binary]==3.3.4
+pgvector==0.5.0
+openai==1.109.1
+pydantic==2.13.4
+PyYAML==6.0.3
+python-dotenv==1.2.3
+charset-normalizer==3.5.1
+pypdf==6.16.2
+python-multipart==0.0.32
+PyJWT==2.13.0
+openpyxl==3.1.5
+python-pptx==1.0.2
+pymupdf==1.28.2
+# 测试（dev）
+pytest==9.1.1

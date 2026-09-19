@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: 编译检查 + pytest（确定性门禁）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - name: 安装依赖（不含 rerank/OCR 可选重依赖）
+        run: pip install -r requirements-dev.txt
+      - name: 字节码编译检查
+        run: python -m compileall -q app
+      - name: 运行测试（含 examples 真实文档解析回归）
+        run: python -m pytest
+
+  # 评测回归：需真实 Embedding/LLM API 与 pgvector，手动触发（workflow_dispatch）。
+  # 当前以 hr-eval.yaml 的 1.0 基线做非退化门禁；rerank 依赖本地 2.3GB 模型权重，
+  # 不在 CI 内运行，故此处只对比 dense / hybrid。
+  eval:
+    name: 评测回归（手动触发，需 QWEN_API_KEY）
+    needs: test
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: enterprise_kb
+          POSTGRES_USER: enterprise_kb
+          POSTGRES_PASSWORD: enterprise_kb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U enterprise_kb -d enterprise_kb"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+psycopg://enterprise_kb:enterprise_kb@localhost:5432/enterprise_kb
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - name: 检测 QWEN_API_KEY
+        env:
+          QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
+        run: |
+          if [ -n "$QWEN_API_KEY" ]; then
+            echo "HAS_KEY=true" >> "$GITHUB_ENV"
+          else
+            echo "HAS_KEY=false" >> "$GITHUB_ENV"
+            echo "未配置 QWEN_API_KEY，跳过评测回归（本 job 需手动触发）"
+          fi
+      - name: 安装依赖
+        if: env.HAS_KEY == 'true'
+        run: pip install -r requirements-dev.txt
+      - name: 初始化数据库并导入示例
+        if: env.HAS_KEY == 'true'
+        env:
+          QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
+        run: |
+          python -m app.cli init-db
+          python -m app.cli ingest examples/employee-handbook.md --knowledge-base hr
+      - name: 多方式评测（dense/hybrid）并做非退化门禁
+        if: env.HAS_KEY == 'true'
+        env:
+          QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
+        run: |
+          python -m app.eval eval/hr-eval.yaml --modes dense hybrid --json eval-result.json
+          python - <<'PY'
+          import json
+          data = json.load(open("eval-result.json", encoding="utf-8"))
+          ok = True
+          for mode, payload in data["modes"].items():
+              s = payload["summary"]
+              for key, label in (("retrieval_recall", "检索命中率"),
+                                 ("fact_accuracy", "事实覆盖率"),
+                                 ("no_answer_accuracy", "拒答正确率")):
+                  rate = s[key]["rate"]
+                  if rate is not None and rate < 1.0:
+                      print(f"[FAIL] {mode} {label}={rate} < 1.0")
+                      ok = False
+              print(f"[{mode}] 检索={s['retrieval_recall']['rate']} "
+                    f"事实={s['fact_accuracy']['rate']} "
+                    f"拒答={s['no_answer_accuracy']['rate']}")
+          raise SystemExit(0 if ok else 1)
+          PY

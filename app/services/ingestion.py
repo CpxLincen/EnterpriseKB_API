@@ -24,6 +24,7 @@ import posixpath
 import re
 import contextlib
 import io
+import logging
 import threading
 import time
 import unicodedata
@@ -43,7 +44,25 @@ from app.services.providers import OpenAICompatibleProvider
 from app.services.retrieval import invalidate
 
 
-# 允许导入的文档扩展名（上传白名单与 CLI 重建共用；与前端文件选择器保持一致）
+logger = logging.getLogger(__name__)
+
+
+# 老格式：入库时直接筛除（古老格式价值低，不再做 LibreOffice 转换）。
+# 仅用于识别与提示，不进入上传白名单。见 read_document 的筛除分支。
+LEGACY_SUFFIXES = {".doc", ".xls", ".ppt", ".rtf", ".odt", ".ods", ".odp"}
+
+# 老格式 → 推荐转换的新格式（用于筛除时的提示信息）
+_LEGACY_TO_MODERN = {
+    ".doc": ".docx",
+    ".xls": ".xlsx",
+    ".ppt": ".pptx",
+    ".rtf": ".docx",
+    ".odt": ".docx",
+    ".ods": ".xlsx",
+    ".odp": ".pptx",
+}
+
+# 允许导入的文档扩展名（上传白名单与 CLI 重建共用；老格式不在其列，入库时筛除）
 ALLOWED_SUFFIXES = {".md", ".txt", ".docx", ".pdf", ".xlsx", ".pptx", ".html", ".htm", ".epub"}
 
 # 二进制文件魔数（magic bytes），用于内容嗅探，防止伪造扩展名绕过白名单
@@ -150,6 +169,7 @@ class RebuildResult:
     kb_name: str  # 知识库名
     processed: int = 0  # 成功处理的文件数
     chunks: int = 0  # 重建后入库块总数
+    deleted: int = 0  # 删除的失效文档数（增量同步 delete_missing 时）
     errors: list[str] | None = None  # 单文件失败信息（文件名: 原因）
 
     def __post_init__(self) -> None:
@@ -370,16 +390,81 @@ def _docx_table_markdown(tbl: ElementTree.Element) -> str:
     return _table_to_markdown(result)
 
 
-def read_docx(path: Path) -> list[ParsedBlock]:
-    """读取 .docx（OOXML）正文，按文档顺序返回段落与表格（表格转 Markdown）。
+def _docx_part_blocks(body: ElementTree.Element) -> list[tuple[str, str]]:
+    """遍历 DOCX 容器（body / hdr / ftr），按文档顺序产出 (kind, text)。"""
+    out: list[tuple[str, str]] = []
+    for child in body:
+        if child.tag == _W + "p":
+            text = _docx_paragraph_text(child)
+            if text:
+                out.append(("text", normalize_text(text)))
+        elif child.tag == _W + "tbl":
+            md = _docx_table_markdown(child)
+            if md:
+                out.append(("table", normalize_text(md)))
+    return out
 
-    不引入 python-docx，直接解包 word/document.xml，按 body 子元素顺序遍历，
-    段落用 <w:p> 提取、表格用 <w:tbl> 转 Markdown，两者顺序与原文一致。
-    """
-    _check_zip_expansion(path)
+
+def _docx_textbox_texts(root: ElementTree.Element) -> list[str]:
+    """提取 DOCX 文本框（w:txbxContent）内的文本，补齐主 body 流之外的内容。"""
+    texts: list[str] = []
+    for txbx in root.iter(_W + "txbxContent"):
+        parts = [t for p in txbx.iter(_W + "p") if (t := _docx_paragraph_text(p))]
+        if parts:
+            texts.append("\n".join(parts))
+    return texts
+
+
+def _docx_header_footer_names(zf: zipfile.ZipFile) -> tuple[list[str], list[str]]:
+    """解析 document.xml.rels 得到实际引用的页眉/页脚 part 路径（缺省回退按文件名扫描）。"""
+    headers: list[str] = []
+    footers: list[str] = []
+    try:
+        rels = zf.read("word/_rels/document.xml.rels").decode("utf-8", "ignore")
+    except KeyError:
+        rels = ""
+    if rels:
+        for m in re.finditer(r"<Relationship\b[^>]*>", rels):
+            tag = m.group(0)
+            type_m = re.search(r'Type="([^"]+)"', tag)
+            target_m = re.search(r'Target="([^"]+)"', tag)
+            if not type_m or not target_m:
+                continue
+            rel_type = type_m.group(1)
+            target = target_m.group(1)
+            resolved = posixpath.normpath(posixpath.join("word", target))
+            if rel_type.endswith("/header"):
+                headers.append(resolved)
+            elif rel_type.endswith("/footer"):
+                footers.append(resolved)
+    if not headers and not footers:
+        names = set(zf.namelist())
+        headers = sorted(n for n in names if re.fullmatch(r"word/header\d*\.xml", n))
+        footers = sorted(n for n in names if re.fullmatch(r"word/footer\d*\.xml", n))
+    return headers, footers
+
+
+def _docx_parse_structured(path: Path) -> list[ParsedBlock]:
+    """DOCX 结构化解析：段落 + 表格（转 Markdown）+ 页眉/页脚 + 文本框。"""
     try:
         with zipfile.ZipFile(path) as zf:
             xml_bytes = zf.read("word/document.xml")
+            names = set(zf.namelist())
+            headers, footers = _docx_header_footer_names(zf)
+            extra_parts: list[tuple[str, str]] = []
+            for part_name in headers + footers:
+                if part_name not in names:
+                    continue
+                try:
+                    part_root = ElementTree.fromstring(zf.read(part_name))
+                except (KeyError, ElementTree.ParseError):
+                    continue
+                container = (
+                    part_root.find(_W + "hdr")
+                    or part_root.find(_W + "ftr")
+                    or part_root
+                )
+                extra_parts.extend(_docx_part_blocks(container))
     except (zipfile.BadZipFile, KeyError) as exc:
         raise ValueError(f"Cannot parse '{path.name}' as a .docx file.") from exc
     root = ElementTree.fromstring(xml_bytes)
@@ -387,58 +472,220 @@ def read_docx(path: Path) -> list[ParsedBlock]:
     if body is None:
         raise ValueError(f"Cannot parse '{path.name}': missing document body.")
     blocks: list[ParsedBlock] = []
-    for child in body:
-        if child.tag == _W + "p":
-            text = _docx_paragraph_text(child)
-            if text:
-                blocks.append(ParsedBlock(normalize_text(text), None, "text"))
-        elif child.tag == _W + "tbl":
-            md = _docx_table_markdown(child)
-            if md:
-                blocks.append(ParsedBlock(normalize_text(md), None, "table"))
+    for kind, text in _docx_part_blocks(body):
+        blocks.append(ParsedBlock(text, None, kind))
+    for text in _docx_textbox_texts(root):
+        blocks.append(ParsedBlock(normalize_text(text), None, "text"))
+    for kind, text in extra_parts:
+        blocks.append(ParsedBlock(text, None, kind))
     return blocks
 
 
-def read_xlsx(path: Path) -> list[ParsedBlock]:
-    """读取 .xlsx：逐 sheet 把有效行转成 Markdown 表格（整 sheet 视为一张表）。
+def _docx_fallback_text(path: Path) -> str:
+    """DOCX 结构化解析失败时的兜底：正则提取 word/*.xml 内全部 <w:t> 文本。"""
+    parts: list[str] = []
+    try:
+        with zipfile.ZipFile(path) as zf:
+            for name in zf.namelist():
+                if not (name.startswith("word/") and name.endswith(".xml")):
+                    continue
+                try:
+                    xml = zf.read(name).decode("utf-8", "ignore")
+                except KeyError:
+                    continue
+                parts.extend(
+                    html.unescape(t).strip()
+                    for t in re.findall(r"<w:t[^>]*>(.*?)</w:t>", xml, flags=re.DOTALL)
+                    if t.strip()
+                )
+    except (zipfile.BadZipFile, OSError):
+        return ""
+    return "\n".join(parts).strip()
 
-    小文件使用非 read_only 模式以读取合并单元格（read_only 模式无 merged_cells），
-    对每个合并区域把左上角值填充到区域内所有单元格；解压后超过 100MB 的大文件改用
-    read_only 流式读取以控制内存（合并单元格暂不展开）。
+
+def read_docx(path: Path) -> list[ParsedBlock]:
+    """读取 .docx（OOXML）：优先结构化解析（段落/表格/页眉页脚/文本框），
+    失败时降级为正则提取全部 <w:t> 文本（问题 #27 降级链）。"""
+    _check_zip_expansion(path)
+    try:
+        return _docx_parse_structured(path)
+    except ValueError:
+        raise  # 缺 document.xml / 非 docx 等致命错误，不降级
+    except Exception:  # noqa: BLE001 - 结构化解析失败 → 文本兜底
+        fallback = _docx_fallback_text(path)
+        if fallback:
+            return [ParsedBlock(normalize_text(fallback), None, "text")]
+        raise
+
+
+def _is_empty_row(row: list[str]) -> bool:
+    """判断一行是否全空（用于 sheet 内多表拆分）。"""
+    return not any(str(c).strip() for c in row)
+
+
+def _block_ncols(block: list[list[str]]) -> int:
+    """返回内容块的最大「非空」列数（openpyxl 会把行补齐到最大列宽，须按非空计）。"""
+    return max((sum(1 for c in r if str(c).strip()) for r in block), default=0)
+
+
+def _trim_empty_columns(rows: list[list[str]]) -> list[list[str]]:
+    """剔除在所有行都为空的列。"""
+    if not rows:
+        return rows
+    ncols = max(len(r) for r in rows)
+    keep = [c for c in range(ncols) if any(c < len(r) and str(r[c]).strip() for r in rows)]
+    return [[r[c] if c < len(r) else "" for c in keep] for r in rows]
+
+
+def _split_sheet_into_tables(rows: list[list[str]]) -> list[list[list[str]]]:
+    """把一个 sheet 的原始行按「整行全空」切成多张表（纵向堆叠的多表场景）。
+
+    切分条件（保守，避免误拆含空行的单张表）：
+    - 空行段 >= 2 行；或
+    - 空行段上下两个内容块列数不同（明显是两张不同的表）。
+    每个最终块再做「整列全空」剔除，并丢弃不足 2 行的残块（单行标题等无数据价值）。
     """
+    if not rows:
+        return []
+    blocks_raw: list[list[list[str]]] = []
+    gaps: list[int] = []
+    cur: list[list[str]] = []
+    empty_run = 0
+    for r in rows:
+        if _is_empty_row(r):
+            if cur:
+                blocks_raw.append(cur)
+                cur = []
+            empty_run += 1
+        else:
+            if not cur and blocks_raw and empty_run:
+                gaps.append(empty_run)
+            empty_run = 0
+            cur.append(r)
+    if cur:
+        blocks_raw.append(cur)
+    if not blocks_raw:
+        return []
+    # 决定每个相邻块之间是否切开
+    decisions = [
+        (gaps[i] >= 2) or (_block_ncols(blocks_raw[i]) != _block_ncols(blocks_raw[i + 1]))
+        for i in range(len(blocks_raw) - 1)
+    ]
+    groups: list[list[list[str]]] = []
+    merged: list[list[str]] = blocks_raw[0]
+    for i in range(len(decisions)):
+        if decisions[i]:
+            groups.append(merged)
+            merged = blocks_raw[i + 1]
+        else:
+            merged = merged + blocks_raw[i + 1]
+    groups.append(merged)
+    result: list[list[list[str]]] = []
+    for g in groups:
+        g = _trim_empty_columns(g)
+        if len(g) >= 2:
+            result.append(g)
+    return result
+
+
+def _xlsx_parse_structured(path: Path) -> list[ParsedBlock]:
+    """XLSX 结构化解析：逐 sheet 转 Markdown 表格（含合并单元格、公式回退、多表拆分）。"""
     try:
         import openpyxl
     except ImportError as exc:
         raise ValueError("Reading .xlsx requires openpyxl. Run: pip install openpyxl") from exc
-    _check_zip_expansion(path)
     use_read_only = _zip_total_size(path) > _XLSX_STREAM_THRESHOLD
-    try:
-        workbook = openpyxl.load_workbook(path, read_only=use_read_only, data_only=True)
-    except Exception as exc:  # noqa: BLE001 - 解析失败统一转为 ValueError
-        raise ValueError(f"Cannot parse '{path.name}' as a .xlsx file.") from exc
+    wb_values = openpyxl.load_workbook(path, read_only=use_read_only, data_only=True)
+    wb_formulas = None
+    if not use_read_only:
+        try:
+            wb_formulas = openpyxl.load_workbook(path, read_only=False, data_only=False)
+        except Exception:  # noqa: BLE001 - 公式回退失败不阻断解析
+            wb_formulas = None
     blocks: list[ParsedBlock] = []
     try:
-        for ws in workbook.worksheets:
+        for ws in wb_values.worksheets:
             merged_ranges = [] if use_read_only else list(ws.merged_cells.ranges)
             rows: list[list[str]] = []
-            for row in ws.iter_rows(values_only=True):
-                cells = ["" if v is None else str(v) for v in row]
-                rows.append(cells)
+            ws_f = wb_formulas[ws.title] if wb_formulas is not None else None
+            if ws_f is not None:
+                for row_v, row_f in zip(ws.iter_rows(values_only=True), ws_f.iter_rows(values_only=True)):
+                    cells = []
+                    for v, f in zip(row_v, row_f):
+                        if v is None and f is not None:
+                            cells.append(str(f))
+                        else:
+                            cells.append("" if v is None else str(v))
+                    rows.append(cells)
+            else:
+                for row in ws.iter_rows(values_only=True):
+                    rows.append(["" if v is None else str(v) for v in row])
             if not rows:
                 continue
             # 填充合并单元格：左上角值复制到合并区域内的所有位置
             for rng in merged_ranges:
-                top = rows[rng.min_row - 1][rng.min_col - 1]
-                for r in range(rng.min_row, rng.max_row + 1):
-                    for c in range(rng.min_col, rng.max_col + 1):
-                        rows[r - 1][c - 1] = top
-            caption = ws.title.strip() or None
-            md = _table_to_markdown(rows, caption)
-            if md:
-                blocks.append(ParsedBlock(md, None, "table"))
+                if rng.max_row <= len(rows) and rng.max_col <= len(rows[rng.min_row - 1]):
+                    top = rows[rng.min_row - 1][rng.min_col - 1]
+                    for r in range(rng.min_row, rng.max_row + 1):
+                        for c in range(rng.min_col, rng.max_col + 1):
+                            rows[r - 1][c - 1] = top
+            sheet_title = ws.title.strip() or None
+            tables = _split_sheet_into_tables(rows)
+            if not tables:
+                continue
+            for idx, table_rows in enumerate(tables):
+                if len(tables) > 1:
+                    caption = f"{sheet_title}（表{idx + 1}）" if sheet_title else f"表{idx + 1}"
+                else:
+                    caption = sheet_title
+                md = _table_to_markdown(table_rows, caption)
+                if md:
+                    blocks.append(ParsedBlock(md, None, "table"))
     finally:
-        workbook.close()
+        wb_values.close()
+        if wb_formulas is not None:
+            wb_formulas.close()
     return blocks
+
+
+def _xlsx_fallback_text(path: Path) -> str:
+    """XLSX 结构化解析失败时的兜底：提取 sharedStrings.xml 与各 sheet 的内联文本。"""
+    parts: list[str] = []
+    try:
+        with zipfile.ZipFile(path) as zf:
+            lower = {n.lower(): n for n in zf.namelist()}
+            shared = lower.get("xl/sharedstrings.xml")
+            if shared:
+                xml = zf.read(shared).decode("utf-8", "ignore")
+                parts.extend(
+                    html.unescape(t).strip()
+                    for t in re.findall(r"<t[^>]*>(.*?)</t>", xml, flags=re.DOTALL)
+                    if t.strip()
+                )
+            for key in sorted(k for k in lower if re.fullmatch(r"xl/worksheets/sheet\d+\.xml", k)):
+                xml = zf.read(lower[key]).decode("utf-8", "ignore")
+                parts.extend(
+                    html.unescape(t).strip()
+                    for t in re.findall(r"<t[^>]*>(.*?)</t>", xml, flags=re.DOTALL)
+                    if t.strip()
+                )
+    except (zipfile.BadZipFile, OSError):
+        return ""
+    return "\n".join(p for p in parts if p).strip()
+
+
+def read_xlsx(path: Path) -> list[ParsedBlock]:
+    """读取 .xlsx：优先 openpyxl 结构化解析，失败时降级为提取共享/内联文本（#27 降级链）。"""
+    _check_zip_expansion(path)
+    try:
+        return _xlsx_parse_structured(path)
+    except ValueError:
+        raise  # openpyxl 缺失等致命错误，不降级
+    except Exception:  # noqa: BLE001 - 结构化解析失败 → 文本兜底
+        fallback = _xlsx_fallback_text(path)
+        if fallback:
+            return [ParsedBlock(normalize_text(fallback), None, "text")]
+        raise
 
 
 def _pptx_tc_text(tc: ElementTree.Element) -> str:
@@ -486,10 +733,64 @@ def _pptx_table_markdown(tbl: ElementTree.Element) -> str:
     return _table_to_markdown(rows)
 
 
+def _pptx_chart_markdown(chart) -> str:
+    """把 PPTX 图表（python-pptx Chart）尽力转成 Markdown 表格（类别列 + 系列行）。
+
+    用第一个 plot 的类别作表头，各 plot 的每个系列作为一行；图表标题作 caption。
+    属尽力而为：图表 XML 缺失 / 结构异常时返回空字符串，不阻断整页解析。
+    """
+    try:
+        plots = list(chart.plots)
+    except Exception:  # noqa: BLE001
+        return ""
+    if not plots:
+        return ""
+    header: list[str] | None = None
+    rows: list[list[str]] = []
+    for plot in plots:
+        try:
+            cat_labels = [str(c) for c in plot.categories]
+        except Exception:  # noqa: BLE001
+            cat_labels = []
+        if header is None:
+            header = ["系列"] + cat_labels
+        try:
+            series_list = list(plot.series)
+        except Exception:  # noqa: BLE001
+            continue
+        for s in series_list:
+            try:
+                name = s.name or ""
+            except Exception:  # noqa: BLE001
+                name = ""
+            try:
+                vals = list(s.values)
+            except Exception:  # noqa: BLE001
+                vals = []
+            rows.append([name] + ["" if v is None else str(v) for v in vals])
+    if not rows or header is None:
+        return ""
+    title = ""
+    try:
+        if getattr(chart, "has_title", False):
+            chart_title = chart.chart_title
+            if chart_title is not None and getattr(chart_title, "has_text_frame", False):
+                title = (chart_title.text_frame.text or "").strip()
+    except Exception:  # noqa: BLE001
+        title = ""
+    return _table_to_markdown([header] + rows, caption=title or None)
+
+
 def read_pptx(path: Path) -> list[ParsedBlock]:
-    """读取 .pptx：逐页提取标题/正文/表格（表格转 Markdown），每页一个块。"""
+    """读取 .pptx：逐页提取标题/正文/表格/图表/备注（表格与图表转 Markdown）。
+
+    - 表格 / 图表转 Markdown 表格块；图表数据按「类别列 + 系列行」还原；
+    - 组合（Group）递归提取文本；SmartArt 等图形框经 a:t 兜底提取；
+    - 演讲者备注单独成块（前缀【演讲者备注】），保留可检索性。
+    """
     try:
         from pptx import Presentation
+        from pptx.enum.shapes import MSO_SHAPE_TYPE
     except ImportError as exc:
         raise ValueError("Reading .pptx requires python-pptx. Run: pip install python-pptx") from exc
     _check_zip_expansion(path)
@@ -498,12 +799,40 @@ def read_pptx(path: Path) -> list[ParsedBlock]:
     except Exception as exc:  # noqa: BLE001
         raise ValueError(f"Cannot parse '{path.name}' as a .pptx file.") from exc
     blocks: list[ParsedBlock] = []
+
+    def collect_text(shape, out: list[str]) -> None:
+        """递归收集组合形状内的文本（普通文本、SmartArt、文本框）。"""
+        try:
+            st = shape.shape_type
+        except Exception:  # noqa: BLE001
+            st = None
+        if st == MSO_SHAPE_TYPE.GROUP:
+            for sub in shape.shapes:
+                collect_text(sub, out)
+            return
+        if getattr(shape, "has_table", False) or getattr(shape, "has_chart", False):
+            return
+        if getattr(shape, "has_text_frame", False):
+            text = shape.text_frame.text.strip()
+            if text:
+                out.append(text)
+            return
+        # SmartArt / 图形框兜底：直接抽取全部 a:t 文本
+        for t in shape._element.iter(_A + "t"):
+            s = (t.text or "").strip()
+            if s:
+                out.append(s)
+
     for index, slide in enumerate(prs.slides, start=1):
         parts: list[tuple[str, str]] = []  # (kind, text)，kind ∈ text / table
         for shape in slide.shapes:
             if getattr(shape, "has_table", False):
                 tbl = shape._element.find(".//" + _A + "tbl")
                 md = _pptx_table_markdown(tbl) if tbl is not None else ""
+                if md:
+                    parts.append(("table", md))
+            elif getattr(shape, "has_chart", False):
+                md = _pptx_chart_markdown(shape.chart)
                 if md:
                     parts.append(("table", md))
             elif getattr(shape, "has_text_frame", False):
@@ -514,6 +843,20 @@ def read_pptx(path: Path) -> list[ParsedBlock]:
                         lines.append(line)
                 if lines:
                     parts.append(("text", "\n".join(lines)))
+            else:
+                # 组合 / SmartArt / 图形框等非文本、非表格形状
+                collected: list[str] = []
+                collect_text(shape, collected)
+                if collected:
+                    parts.append(("text", "\n".join(collected)))
+        # 演讲者备注单独成块（前缀标记，保留可检索性）
+        try:
+            if slide.has_notes_slide:
+                notes = slide.notes_slide.notes_text_frame.text.strip()
+                if notes:
+                    parts.append(("text", "【演讲者备注】\n" + notes))
+        except Exception:  # noqa: BLE001 - 备注读取失败不阻断
+            pass
         # 相邻 text 片段合并，表格独立成块，保持出现顺序
         merged: list[tuple[str, str]] = []
         for kind, text in parts:
@@ -634,6 +977,16 @@ class _HTMLTextExtractor(HTMLParser):
             self._skip_depth += 1
             return
         if self._skip_depth > 0:
+            return
+        if tag == "img":
+            # 图片本身无文字层（OCR/VLM 属 P3），先提取 alt/title 文本保留可检索线索
+            attr = dict(attrs or [])
+            alt = (attr.get("alt") or attr.get("title") or "").strip()
+            if alt:
+                if self._in_cell:
+                    self._cell_buf.append(alt)
+                elif not self._in_table:
+                    self._text_buf.append(f"[图片：{alt}]")
             return
         if tag == "table":
             self._flush_text()
@@ -806,28 +1159,45 @@ _ocr_engine = None  # 模块级 OCR 引擎缓存（懒加载，避免重复初�
 def _ocr_page(page) -> str | None:
     """对已打开的 PyMuPDF 页面做 OCR（可选能力，依赖 rapidocr-onnxruntime）。
 
-    依赖未安装或识别异常时返回 None，保证「无 OCR 能力」时入库流程仍以空文本
-    继续，不会因 OCR 崩溃。
+    区分三种失败态并写 debug 日志（问题 #16）：
+    - 未装依赖（numpy / rapidocr-onnxruntime 缺失）；
+    - 识别异常（引擎初始化或推理抛错）；
+    - 空结果（识别无文字）。
+    任何失败都返回 None，保证「无 OCR 能力」时入库流程仍以空文本继续，不会因 OCR 崩溃。
     """
     global _ocr_engine
     try:
         import numpy as np
     except ImportError:
+        logger.debug("OCR 未执行：numpy 未安装")
         return None
-    try:
-        if _ocr_engine is None:
+    if _ocr_engine is None:
+        try:
             from rapidocr_onnxruntime import RapidOCR
 
             _ocr_engine = RapidOCR()
+        except ImportError:
+            logger.debug("OCR 未执行：rapidocr-onnxruntime 未安装（pip install rapidocr-onnxruntime）")
+            return None
+        except Exception as exc:  # noqa: BLE001 - 引擎初始化异常记 debug，不阻断主流程
+            logger.debug("OCR 未执行：引擎初始化异常 %s", exc)
+            return None
+    try:
         pix = page.get_pixmap(dpi=200)
         image = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, pix.n)
         result, _ = _ocr_engine(image)
-        if not result:
-            return None
-        lines = [str(item[1]).strip() for item in result if item and item[1]]
-        return normalize_text("\n".join(lines)).strip() or None
-    except Exception:  # noqa: BLE001 - OCR 属可选增强，失败不影响主流程
+    except Exception as exc:  # noqa: BLE001 - OCR 属可选增强，失败不影响主流程
+        logger.debug("OCR 识别异常：%s", exc)
         return None
+    if not result:
+        logger.debug("OCR 空结果：未识别到文字")
+        return None
+    lines = [str(item[1]).strip() for item in result if item and item[1]]
+    text = normalize_text("\n".join(lines)).strip()
+    if not text:
+        logger.debug("OCR 空结果：识别文本为空")
+        return None
+    return text
 
 
 def _add_warning(warnings_out: list[str] | None, message: str) -> None:
@@ -836,9 +1206,42 @@ def _add_warning(warnings_out: list[str] | None, message: str) -> None:
         warnings_out.append(message)
 
 
+def _fill_pdf_merged_cells(table_data: list[list[str | None]]) -> list[list[str]]:
+    """把 PyMuPDF table.extract() 中的 None（合并单元格延续位）还原为合并主格值。
+
+    PyMuPDF 对合并单元格：左上角格含文本，合并区域内其余格返回 None；真正空单元格返回 ""。
+    先做行内横向填充（跨列合并），再做列内纵向填充（跨行合并），None 才会被正确还原；
+    两种填充都只在 None 上覆盖，"" 保持不动（避免把真空格误填为上方值）。
+    """
+    rows = [list(r) for r in table_data if r]
+    if not rows:
+        return []
+    ncols = max(len(r) for r in rows)
+    grid = [r + [""] * (ncols - len(r)) for r in rows]
+    # 横向：None 从同行的左侧最近非 None 格取值（跨列合并）
+    for r in range(len(grid)):
+        carry: str | None = None
+        for c in range(ncols):
+            v = grid[r][c]
+            if v is None:
+                grid[r][c] = carry if carry is not None else None
+            else:
+                carry = v
+    # 纵向：仍为 None 的从同列上方最近非 None 格取值（跨行合并）
+    for c in range(ncols):
+        carry: str | None = None
+        for r in range(len(grid)):
+            v = grid[r][c]
+            if v is None:
+                grid[r][c] = carry if carry is not None else ""
+            else:
+                carry = v
+    return grid
+
+
 def _pymupdf_table_to_markdown(table_data: list[list[str | None]]) -> str:
-    """把 PyMuPDF table.extract() 的结果转成 Markdown 表格文本。"""
-    return _table_to_markdown([["" if cell is None else str(cell) for cell in row] for row in table_data])
+    """把 PyMuPDF table.extract() 的结果转成 Markdown 表格文本（还原合并单元格）。"""
+    return _table_to_markdown(_fill_pdf_merged_cells(table_data))
 
 
 def _inside_any_table(
@@ -903,6 +1306,42 @@ def _cluster_1d(values: list[float]) -> list[float]:
     return [sum(g) / len(g) for g in groups]
 
 
+# 编号 / 项目符号形态：用于 2 列无边框表格的误判过滤（编号列表常被拆成「编号 + 正文」两列）。
+_NUMBERING_PATTERNS = (
+    r"\d{1,4}[.、)]",
+    r"[（(]\d{1,4}[)）]",
+    r"[一二三四五六七八九十百]+[、.]",
+    r"[（(][一二三四五六七八九十百]+[)）]",
+    r"[a-zA-Z][.、)]",
+    r"[•·▪◦●○◆◇*\-—―]",
+)
+
+
+def _left_column_is_numbering(cells: list[str]) -> bool:
+    """判断一列文本是否为「编号 / 项目符号」形态（用于 2 列无边框表的误判过滤）。"""
+    if not cells:
+        return False
+    matched = 0
+    for cell in cells:
+        s = str(cell).strip()
+        if not s:
+            continue
+        if any(re.fullmatch(pattern, s) for pattern in _NUMBERING_PATTERNS):
+            matched += 1
+    return matched / len(cells) > 0.5
+
+
+_BARE_NUMBER_RE = re.compile(r"\d{1,4}")
+
+
+def _left_column_is_bare_numbering(cells: list[str]) -> bool:
+    """判断一列文本是否为「无标点的裸数字」形态（如 1 / 2 / 3）。"""
+    if not cells:
+        return False
+    matched = sum(1 for c in cells if _BARE_NUMBER_RE.fullmatch(str(c).strip()))
+    return matched / len(cells) > 0.5
+
+
 def _detect_borderless_tables(
     page, excluded_rects: list[tuple[float, float, float, float]]
 ) -> list[tuple[tuple[float, float, float, float], str]]:
@@ -910,6 +1349,7 @@ def _detect_borderless_tables(
 
     思路：行聚类 → 每行按相对间隙切单元格 → 连续多列行分组 →
     跨行列锚点聚类 → 每行按锚点填充（允许空单元格）。返回 [(bbox, markdown)]。
+    2 列表格也支持，但对左侧列做「编号 / 项目符号」负向过滤，避免把编号列表误判成表格。
     """
     words: list[tuple[float, float, float, float, str]] = []
     for w in page.get_text("words"):
@@ -938,9 +1378,7 @@ def _detect_borderless_tables(
             j += 1
         group = [parsed[k] for k in group_idx]
         anchors = _cluster_1d([round(c[1], 1) for cells in group for c in cells])
-        # 要求至少 3 列：编号列表（"1. 内容"）与文档标题等 2 列形态极易
-        # 被误判为表格，故提高门槛、宁漏勿错；2 列表格的文字仍会作为正文入库。
-        if len(anchors) < 3:
+        if len(anchors) < 2:
             i = j
             continue
         md_rows: list[list[str]] = []
@@ -950,6 +1388,35 @@ def _detect_borderless_tables(
                 best = min(cells, key=lambda c: abs(c[1] - anchor), default=None)
                 vals.append(best[0] if best and abs(best[1] - anchor) <= _BORDERLESS_COL_ALIGN else "")
             md_rows.append(vals)
+        # 2 列形态（编号列表 / 标题）极易误判：需至少 2 行、右侧列非全空，
+        # 且左侧列不是「编号 / 项目符号」。不满足则按正文处理（宁漏勿错）。
+        if len(anchors) == 2:
+            if len(md_rows) < 2:
+                i = j
+                continue
+            left = [r[0] for r in md_rows]
+            right = [r[1] for r in md_rows]
+            if _left_column_is_numbering(left):
+                i = j
+                continue
+            if not any(right):
+                i = j
+                continue
+            # 裸数字（1 / 2 / 3）左列：右列为长正文判为编号列表，右列为短值判为「序号」表
+            if _left_column_is_bare_numbering(left):
+                avg_right = sum(len(str(x).strip()) for x in right) / len(right)
+                if avg_right >= 12:
+                    i = j
+                    continue
+            # 双栏正文 / 定义列表 vs 表格式数据：表格单元格通常较短，长句正文应保留为正文。
+            # 平均单元格长度过长或存在超长单元格判为「正文」而非表格（宁漏勿错）。
+            all_cells = [str(c).strip() for r in md_rows for c in r if str(c).strip()]
+            if all_cells:
+                avg_len = sum(len(c) for c in all_cells) / len(all_cells)
+                max_len = max(len(c) for c in all_cells)
+                if avg_len >= 12 or max_len >= 20:
+                    i = j
+                    continue
         md = _table_to_markdown(md_rows)
         if md:
             group_words = [w for k in group_idx for w in rows[k]]
@@ -964,60 +1431,215 @@ def _detect_borderless_tables(
     return tables
 
 
+def _rows_equal(a: list[str], b: list[str]) -> bool:
+    """判断两个表头行是否相同（用于跨页表格「表头重复」判定）。"""
+    if len(a) != len(b):
+        return False
+    return all((x or "").strip() == (y or "").strip() for x, y in zip(a, b))
+
+
+# 跨页表格续接判定：上一物理表格须贴近页底、下一物理表格贴近页顶（相对页高比例，
+# 兼容不同页边距；正文底一般在页高 85%+，取 0.70 较为宽松）。
+_PAGE_BOTTOM_RATIO = 0.70
+_PAGE_TOP_RATIO = 0.30
+
+
+def _merge_cross_page_tables(tables: list[dict]) -> list[dict]:
+    """把跨页被切开的有边框表格合并，续页丢失的表头由上一页表头补回。
+
+    判定条件（须同时满足）：连续页、列数相同、上一物理表格贴页底、下一物理表格贴页顶、
+    两表首行不同（首行相同说明续页自带表头，无需合并）。合并后 grid 直接拼接，最终
+    Markdown 以第一页表头为表头。
+    """
+    if not tables:
+        return []
+    result: list[dict] = []
+    i = 0
+    n = len(tables)
+    while i < n:
+        cur = tables[i]
+        j = i + 1
+        while j < n:
+            nxt = tables[j]
+            if nxt["page"] != cur["end_page"] + 1:
+                break
+            if len(cur["grid"][0]) != len(nxt["grid"][0]):
+                break
+            if len(nxt["grid"][0]) < 2:
+                break
+            if cur["end_bbox"][3] < cur["end_page_height"] * _PAGE_BOTTOM_RATIO:
+                break
+            if nxt["bbox"][1] > nxt["page_height"] * _PAGE_TOP_RATIO:
+                break
+            if _rows_equal(cur["grid"][0], nxt["grid"][0]):
+                break
+            cur["grid"] = cur["grid"] + nxt["grid"]
+            cur["end_page"] = nxt["page"]
+            cur["end_bbox"] = nxt["bbox"]
+            cur["end_page_height"] = nxt["page_height"]
+            j += 1
+        result.append(cur)
+        i = j
+    return result
+
+
+def _split_into_columns(blocks: list[tuple], content_width: float) -> list[list[tuple]]:
+    """按 x 轴空隙把块分成若干「栏」（多栏版面），返回按 x 从左到右排序的栏列表。
+
+    在窄块的 x 区间合并后寻找宽度 > 12% 版面宽的空隙作为栏分隔；无空隙则视为单栏。
+    """
+    if len(blocks) < 2:
+        return [blocks]
+    intervals = sorted((b[0][0], b[0][2]) for b in blocks)
+    merged: list[tuple[float, float]] = []
+    for a, b in intervals:
+        if merged and a <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], b))
+        else:
+            merged.append((a, b))
+    boundaries: list[float] = []
+    for idx in range(len(merged) - 1):
+        gap = merged[idx + 1][0] - merged[idx][1]
+        if gap > 0.12 * content_width:
+            boundaries.append((merged[idx][1] + merged[idx + 1][0]) / 2)
+    if not boundaries:
+        return [blocks]
+    columns: list[list[tuple]] = [[] for _ in range(len(boundaries) + 1)]
+    for b in blocks:
+        cx = (b[0][0] + b[0][2]) / 2
+        col = sum(1 for m in boundaries if cx > m)
+        columns[col].append(b)
+    return [c for c in columns if c]
+
+
+def _sort_entries_reading_order(
+    entries: list[tuple[tuple[float, float, float, float], str, str]],
+) -> list[tuple[tuple[float, float, float, float], str, str]]:
+    """按阅读顺序排序页面内的块（多栏先左后右、栏内自上而下；通栏块按 y 插入）。
+
+    entries 元素为 (bbox, kind, payload)。通栏块（宽度 >= 60% 版面宽，如标题 / 宽表格）
+    作为栏间分隔按 y 插入；窄块按 x 空隙分栏，每栏内按 (y, x) 排序，最终重构出接近
+    人工阅读顺序的序列。末尾兜底：任何未输出的块按序补回，保证不丢内容。
+    """
+    if len(entries) <= 1:
+        return list(entries)
+    xmin = min(e[0][0] for e in entries)
+    xmax = max(e[0][2] for e in entries)
+    content_width = max(1.0, xmax - xmin)
+    wide_thresh = 0.6 * content_width
+
+    def yx_key(e: tuple) -> tuple[float, float]:
+        return (e[0][1], e[0][0])
+
+    wide = [e for e in entries if (e[0][2] - e[0][0]) >= wide_thresh]
+    narrow = [e for e in entries if (e[0][2] - e[0][0]) < wide_thresh]
+    wide_sorted = sorted(wide, key=yx_key)
+    columns = _split_into_columns(narrow, content_width)
+    col_sorted = [sorted(col, key=yx_key) for col in columns]
+    result: list[tuple] = []
+    emitted: set[tuple] = set()
+
+    def emit(y_from: float, y_to: float) -> None:
+        for col in col_sorted:
+            for e in col:
+                if y_from <= e[0][1] < y_to and e not in emitted:
+                    result.append(e)
+                    emitted.add(e)
+
+    prev_y = -float("inf")
+    for w in wide_sorted:
+        emit(prev_y, w[0][1])
+        result.append(w)
+        emitted.add(w)
+        prev_y = w[0][3]
+    emit(prev_y, float("inf"))
+    # 兜底：补回所有未输出的块（避免任何内容丢失）
+    for col in col_sorted:
+        for e in col:
+            if e not in emitted:
+                result.append(e)
+                emitted.add(e)
+    for w in wide_sorted:
+        if w not in emitted:
+            result.append(w)
+            emitted.add(w)
+    return result
+
+
 def _read_pdf_pymupdf(
     path: Path,
     warnings_out: list[str] | None,
     stats: ParseStats | None = None,
 ) -> list[ParsedBlock]:
-    """用 PyMuPDF 读取 PDF：表格转 Markdown + 正文提取 + 扫描页 OCR/警告。"""
+    """用 PyMuPDF 读取 PDF：表格转 Markdown（合并单元格还原 + 跨页续接）+ 正文提取（多栏阅读顺序）+ 扫描页 OCR/警告。"""
     fitz = _import_pymupdf()
     doc = fitz.open(str(path))
     blocks: list[ParsedBlock] = []
     scanned_pages: list[int] = []
     ocr_pages = 0
     try:
+        bordered_tables: list[dict] = []
+        borderless_tables: list[dict] = []
+        text_entries: list[dict] = []
         for page_index in range(len(doc)):
             page = doc[page_index]
             page_num = page_index + 1
-            # 1) 检测表格：先 lines 策略（有边框），再词坐标重建（无边框）
-            table_entries: list[tuple[tuple[float, float, float, float], str]] = []
+            page_height = page.rect.height
+            table_bboxes: list[tuple[float, float, float, float]] = []
+            # 1) 有边框表格（lines 策略）：保留网格供跨页合并，合并单元格先行还原
             for table in _find_tables(page).tables:
-                md = _pymupdf_table_to_markdown(table.extract())
-                if md:
-                    table_entries.append((tuple(table.bbox), md))
-            border_bboxes = [bbox for bbox, _ in table_entries]
-            table_entries.extend(_detect_borderless_tables(page, border_bboxes))
-            # 2) 提取文本块（仅文本类型，忽略图片块）
-            text_entries: list[tuple[tuple[float, float, float, float], str]] = []
+                grid = _fill_pdf_merged_cells(table.extract())
+                if not grid:
+                    continue
+                bbox = tuple(table.bbox)
+                bordered_tables.append(
+                    {
+                        "page": page_num,
+                        "page_height": page_height,
+                        "bbox": bbox,
+                        "grid": grid,
+                        "end_page": page_num,
+                        "end_bbox": bbox,
+                        "end_page_height": page_height,
+                    }
+                )
+                table_bboxes.append(bbox)
+            # 2) 无边框表格（词坐标重建）：直接产出 markdown（不参与跨页合并）
+            for bbox, md in _detect_borderless_tables(page, table_bboxes):
+                borderless_tables.append({"page": page_num, "bbox": bbox, "md": md})
+                table_bboxes.append(bbox)
+            # 3) 提取文本块（仅文本类型，忽略图片块），排除表格区域避免重复
             for x0, y0, x1, y1, text, _no, btype in page.get_text("blocks"):
                 if btype != 0:
                     continue
                 text = normalize_text(text).strip()
                 if text:
-                    text_entries.append(((x0, y0, x1, y1), text))
-            # 3) 排除表格区域内的文本块，避免与表格内容重复
-            table_bboxes = [bbox for bbox, _ in table_entries]
-            kept_text = [
-                (bbox, text)
-                for bbox, text in text_entries
-                if not _inside_any_table(bbox, table_bboxes)
-            ]
+                    bbox = (x0, y0, x1, y1)
+                    if not _inside_any_table(bbox, table_bboxes):
+                        text_entries.append({"page": page_num, "bbox": bbox, "text": text})
             # 4) 无任何有效内容 → 判定为扫描页，尝试 OCR，否则记录警告
-            if not kept_text and not table_entries:
+            page_has_text = any(e["page"] == page_num for e in text_entries)
+            if not page_has_text and not table_bboxes:
                 ocr_text = _ocr_page(page)
                 if ocr_text:
                     blocks.append(ParsedBlock(ocr_text, page_num, "text"))
                     ocr_pages += 1
                 else:
                     scanned_pages.append(page_num)
-                continue
-            # 5) 正文与表格按页面坐标（先 y 后 x）交错组装，保持阅读顺序
-            entries: list[tuple[float, float, str, str]] = [
-                (bbox[1], bbox[0], "text", text) for bbox, text in kept_text
-            ]
-            entries += [(bbox[1], bbox[0], "table", md) for bbox, md in table_entries]
-            entries.sort(key=lambda e: (round(e[0]), e[1]))
-            for _, _, kind, payload in entries:
+        # 5) 跨页有边框表格合并，补回续页表头
+        merged_bordered = _merge_cross_page_tables(bordered_tables)
+        # 6) 组装每页条目，按阅读顺序输出
+        page_entries: dict[int, list[tuple[tuple[float, float, float, float], str, str]]] = {}
+        for t in merged_bordered:
+            md = _table_to_markdown(t["grid"])
+            if md:
+                page_entries.setdefault(t["page"], []).append((t["bbox"], "table", md))
+        for t in borderless_tables:
+            page_entries.setdefault(t["page"], []).append((t["bbox"], "table", t["md"]))
+        for e in text_entries:
+            page_entries.setdefault(e["page"], []).append((e["bbox"], "text", e["text"]))
+        for page_num in sorted(page_entries):
+            for bbox, kind, payload in _sort_entries_reading_order(page_entries[page_num]):
                 blocks.append(ParsedBlock(payload, page_num, kind))
     finally:
         doc.close()
@@ -1093,6 +1715,7 @@ def read_document(
     """读取文档，返回结构化片段列表（每个片段带页码与块类型）。
 
     支持格式：.md / .txt / .pdf / .docx / .xlsx / .pptx / .html / .htm / .epub。
+    老格式（.doc/.xls/.ppt/.rtf/.odt/.ods/.odp）在入库时筛除：抛明确 ValueError 提示转换。
     warnings_out 用于收集解析过程中的非致命警告（如混合 PDF 的扫描页跳过）。
     """
     suffix = path.suffix.lower()
@@ -1108,9 +1731,16 @@ def read_document(
         return read_html(path)
     if suffix == ".epub":
         return read_epub(path)
+    if suffix in LEGACY_SUFFIXES:
+        modern = _LEGACY_TO_MODERN.get(suffix, "新格式（如 .docx/.xlsx/.pptx）")
+        raise ValueError(
+            f"Legacy format '{suffix}' is not supported for ingestion. "
+            f"Please convert it to '{modern}' first."
+        )
     if suffix not in {".md", ".txt"}:
         raise ValueError(
-            "Only .md, .txt, .docx, .xlsx, .pptx, .html, .epub, and text-based .pdf files are supported."
+            "Unsupported file type. Supported: .md/.txt/.pdf/.docx/.xlsx/.pptx/.html/.htm/.epub, "
+            "legacy .doc/.xls/.ppt/.rtf/.odt/.ods/.odp must be converted first."
         )
     # Markdown / TXT：多编码探测解码（UTF-8 → GB18030 → charset-normalizer）
     return [ParsedBlock(normalize_text(_decode_text_file(path)), None, "text")]
@@ -1247,12 +1877,17 @@ def ingest_file_detailed(
     provider_config: ProviderConfig,
     display_filename: str | None = None,
     warnings_out: list[str] | None = None,
+    *,
+    source_path: str | None = None,
+    source_mtime: float | None = None,
+    source_size: int | None = None,
 ) -> tuple[int, IngestStats]:
     """导入单个文件到指定知识库，并返回入库块数与结构化统计。
 
     流程：内容嗅探 -> 读文件 -> 计算内容哈希 -> 找到/创建知识库 -> 内容去重 ->
     切块 -> 批量 Embedding -> 写入 documents 与 document_chunks。
     warnings_out 可选，用于收集解析过程中的非致命警告（由调用方展示/打印）。
+    source_* 可选，供增量同步（sync）记录源文件 mtime/size/path 以便变更检测。
     """
     stats = IngestStats(format=path.suffix.lower())
     # 安全：校验文件真实内容与扩展名一致，防止伪造扩展名绕过白名单
@@ -1297,7 +1932,14 @@ def ingest_file_detailed(
         raise ValueError("No readable text found in document.")
     provider = OpenAICompatibleProvider(provider_config)
     vectors = provider.embed([content for content, _, _ in pieces])
-    document = Document(knowledge_base_id=kb.id, filename=display_filename or path.name, content_hash=digest)
+    document = Document(
+        knowledge_base_id=kb.id,
+        filename=display_filename or path.name,
+        content_hash=digest,
+        source_path=source_path,
+        source_mtime=source_mtime,
+        source_size=source_size,
+    )
     session.add(document)
     session.flush()
     session.add_all(
@@ -1394,4 +2036,92 @@ def rebuild_knowledge_base(
             except Exception as exc:  # noqa: BLE001 - 单文件失败不阻断其余文件
                 session.rollback()
                 result.errors.append(f"{file.name}: {exc}")
+    return result
+
+
+def _should_sync(doc: Document, *, mtime: float, size: int) -> bool:
+    """判断文档是否需要增量重导：无源元数据（旧数据）或 mtime/size 变化。"""
+    if doc.source_mtime is None or doc.source_size is None:
+        return True
+    return abs(doc.source_mtime - mtime) > 1e-6 or doc.source_size != size
+
+
+def sync_knowledge_base(
+    kb_name: str,
+    source_dir: Path,
+    provider_config: ProviderConfig,
+    *,
+    delete_missing: bool = False,
+    warnings_out: list[str] | None = None,
+) -> RebuildResult:
+    """增量同步知识库：仅重导 mtime/size 变化的新增/修改文件，可选删除失效文档。
+
+    与 reingest（全量替换）不同，本函数对比 documents.source_mtime/source_size 做变更检测，
+    未变化的文件跳过（不重新 Embedding，省成本）。旧数据无 source_* 元数据时会在首次
+    sync 中全量补齐一次。delete_missing=True 时删除源目录已不存在的文档。
+    """
+    from app.core.database import SessionLocal
+
+    source_dir = Path(source_dir)
+    if not source_dir.is_dir():
+        raise RuntimeError(f"Source directory '{source_dir}' does not exist.")
+    files = sorted(
+        f for f in source_dir.iterdir()
+        if f.is_file() and f.suffix.lower() in ALLOWED_SUFFIXES
+    )
+    result = RebuildResult(kb_name=kb_name)
+    with SessionLocal() as session:
+        kb = session.scalar(select(KnowledgeBase).where(KnowledgeBase.name == kb_name))
+        if not kb:
+            raise RuntimeError(f"Knowledge base '{kb_name}' does not exist.")
+        if (
+            kb.embedding_model != provider_config.embedding_model
+            or kb.embedding_dimensions != provider_config.embedding_dimensions
+        ):
+            raise RuntimeError(
+                "This knowledge base uses a different embedding model/dimension. "
+                "Use 'rebuild' instead of 'sync'."
+            )
+        existing = {
+            d.filename: d
+            for d in session.scalars(
+                select(Document).where(Document.knowledge_base_id == kb.id)
+            ).all()
+        }
+        seen: set[str] = set()
+        for file in files:
+            seen.add(file.name)
+            try:
+                stat = file.stat()
+            except OSError as exc:
+                result.errors.append(f"{file.name}: {exc}")
+                continue
+            doc = existing.get(file.name)
+            if doc is not None and not _should_sync(doc, mtime=stat.st_mtime, size=stat.st_size):
+                continue
+            try:
+                if doc is not None:
+                    session.delete(doc)
+                chunks, _ = ingest_file_detailed(
+                    session,
+                    file,
+                    kb_name,
+                    provider_config,
+                    display_filename=file.name,
+                    warnings_out=warnings_out,
+                    source_path=file.name,
+                    source_mtime=stat.st_mtime,
+                    source_size=stat.st_size,
+                )
+                result.processed += 1
+                result.chunks += chunks
+            except Exception as exc:  # noqa: BLE001 - 单文件失败不阻断其余文件
+                session.rollback()
+                result.errors.append(f"{file.name}: {exc}")
+        if delete_missing:
+            for name, doc in existing.items():
+                if name not in seen:
+                    session.delete(doc)
+                    result.deleted += 1
+        session.commit()
     return result

@@ -7,9 +7,9 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# 先装依赖，利用 Docker 缓存
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+# 先装依赖，利用 Docker 缓存（rerank 为可选重依赖，单独安装以启用）
+COPY requirements.txt requirements-rerank.txt ./
+RUN pip install --no-cache-dir -r requirements.txt -r requirements-rerank.txt
 
 # 复制应用代码与模型配置（.env 不入镜像，密钥通过运行时环境变量注入）
 COPY app ./app

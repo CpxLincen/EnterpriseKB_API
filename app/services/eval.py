@@ -432,11 +432,110 @@ def print_report(results: list[CaseResult], summary: dict) -> None:
             print(f"  裁判: {result.judge_score}  {result.judge_reason or ''}")
 
 
+# 检索方式（与 config/models.yaml 的 retrieval 三种 mode 对齐）
+VALID_MODES = ("dense", "hybrid", "rerank")
+
+
+def parse_modes(value: str) -> list[str]:
+    """把 --modes 参数解析为模式列表（逗号 / 空白分隔），非法值报错。"""
+    modes = [m.strip().lower() for m in re.split(r"[,，\s]+", value) if m.strip()]
+    invalid = [m for m in modes if m not in VALID_MODES]
+    if invalid:
+        raise ValueError(f"Invalid retrieval mode(s): {invalid}. Valid: {', '.join(VALID_MODES)}")
+    if not modes:
+        raise ValueError("--modes requires at least one of: dense, hybrid, rerank")
+    seen: set[str] = set()
+    unique: list[str] = []
+    for m in modes:
+        if m not in seen:
+            seen.add(m)
+            unique.append(m)
+    return unique
+
+
+def run_eval_modes(
+    kb_name: str,
+    cases: list[EvalCase],
+    chat_config,
+    embedding_config,
+    modes: list[str],
+    judge: bool = False,
+) -> dict[str, list[CaseResult]]:
+    """按多种检索方式各跑一遍评测，返回 {mode: results}。"""
+    return {
+        mode: run_eval(kb_name, cases, chat_config, embedding_config, judge=judge, retrieval_mode=mode)
+        for mode in modes
+    }
+
+
+def print_comparison(mode_results: dict[str, list[CaseResult]]) -> None:
+    """打印多方式对比表（指标 × 方式）。"""
+    summaries = {mode: summarize(results) for mode, results in mode_results.items()}
+    modes = list(mode_results.keys())
+    width = 24 + 16 * len(modes)
+    print("=" * width)
+    print(f"评测结果对比（共 {summaries[modes[0]]['total']} 题 × {len(modes)} 方式）")
+    print("指标".ljust(24) + "".join(m.rjust(16) for m in modes))
+    print("-" * width)
+
+    def row(label: str, getter) -> None:
+        cells = []
+        for mode in modes:
+            value = getter(summaries[mode])
+            cells.append("-" if value is None else str(value))
+        print(label.ljust(24) + "".join(c.rjust(16) for c in cells))
+
+    row("检索命中率", lambda s: s["retrieval_recall"]["rate"])
+    row("事实覆盖率", lambda s: s["fact_accuracy"]["rate"])
+    row("拒答正确率", lambda s: s["no_answer_accuracy"]["rate"])
+    if any(summaries[m].get("judge_accuracy") for m in modes):
+        row("LLM 裁判准确率", lambda s: (s.get("judge_accuracy") or {}).get("rate"))
+    cr = "chunk_retrieval"
+    row("块级 Recall@5", lambda s: (s.get(cr) or {}).get("recall_at_5"))
+    row("块级 Hit@1", lambda s: (s.get(cr) or {}).get("hit_at_1"))
+    row("块级 Hit@3", lambda s: (s.get(cr) or {}).get("hit_at_3"))
+    row("块级 MRR", lambda s: (s.get(cr) or {}).get("mrr"))
+    print("=" * width)
+    for mode in modes:
+        s = summaries[mode]
+        print(
+            f"[{mode}] 检索 {s['retrieval_recall']['hit']}/{s['retrieval_recall']['n']}  "
+            f"事实 {s['fact_accuracy']['hit']}/{s['fact_accuracy']['n']}  "
+            f"拒答 {s['no_answer_accuracy']['correct']}/{s['no_answer_accuracy']['n']}"
+        )
+
+
 def write_json(path: Path, results: list[CaseResult], summary: dict) -> None:
     """把逐题结果与汇总写入 JSON 文件。"""
     payload = {"summary": summary, "cases": [asdict(r) for r in results]}
     Path(path).write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"\n已写入 JSON 结果：{path}")
+
+
+def write_json_modes(path: Path, mode_results: dict[str, list[CaseResult]]) -> None:
+    """把多方式评测结果写入 JSON 文件（{"modes": {mode: {...}}}）。"""
+    payload = {
+        "modes": {
+            mode: {"summary": summarize(results), "cases": [asdict(r) for r in results]}
+            for mode, results in mode_results.items()
+        }
+    }
+    Path(path).write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"\n已写入 JSON 结果：{path}")
+
+
+def _markdown_case_table(results: list[CaseResult]) -> list[str]:
+    """生成逐题结果的 Markdown 表格行。"""
+    lines = ["| 状态 | ID | 分类/难度 | 知识库 | 问题 | 回答 | 块级 | 引用 |", "|---|---|---|---|---|---|---|---|"]
+    for result in results:
+        answer = result.answer.replace("|", "\\|").replace("\n", " ")
+        cited = ", ".join(c["filename"] for c in result.citations) or "-"
+        chunk_txt = f"@{result.chunk_rank}" if result.chunk_hit else ("未命中" if result.chunk_hit is not None else "-")
+        lines.append(
+            f"| {_status_text(result)} | {result.id} | {result.category}/{result.difficulty} | {result.knowledge_base} | "
+            f"{result.question} | {answer[:120]} | {chunk_txt} | {cited} |"
+        )
+    return lines
 
 
 def write_markdown(path: Path, results: list[CaseResult], summary: dict) -> None:
@@ -460,21 +559,46 @@ def write_markdown(path: Path, results: list[CaseResult], summary: dict) -> None
     db = summary.get("difficulty_breakdown") or {}
     if db:
         lines.append("- 难度分层 Recall@5：" + "  ".join(f"{d}:{v['hit']}/{v['n']}" for d, v in db.items()))
-    lines += ["", "| 状态 | ID | 分类/难度 | 知识库 | 问题 | 回答 | 块级 | 引用 |", "|---|---|---|---|---|---|---|---|"]
-    for result in results:
-        answer = result.answer.replace("|", "\\|").replace("\n", " ")
-        cited = ", ".join(c["filename"] for c in result.citations) or "-"
-        chunk_txt = f"@{result.chunk_rank}" if result.chunk_hit else ("未命中" if result.chunk_hit is not None else "-")
-        lines.append(
-            f"| {_status_text(result)} | {result.id} | {result.category}/{result.difficulty} | {result.knowledge_base} | "
-            f"{result.question} | {answer[:120]} | {chunk_txt} | {cited} |"
-        )
+    lines += ["", * _markdown_case_table(results)]
+    Path(path).write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"已写入 Markdown 报告：{path}")
+
+
+def write_markdown_modes(path: Path, mode_results: dict[str, list[CaseResult]]) -> None:
+    """把多方式对比报告写入 Markdown 文件。"""
+    summaries = {mode: summarize(results) for mode, results in mode_results.items()}
+    modes = list(mode_results.keys())
+    lines = ["# 知识库问答评测报告（多方式对比）", ""]
+    lines.append("| 指标 | " + " | ".join(modes) + " |")
+    lines.append("|" + "---|" * (len(modes) + 1))
+
+    def row(label: str, getter) -> None:
+        cells = []
+        for mode in modes:
+            value = getter(summaries[mode])
+            cells.append("-" if value is None else str(value))
+        lines.append(f"| {label} | " + " | ".join(cells) + " |")
+
+    row("检索命中率", lambda s: s["retrieval_recall"]["rate"])
+    row("事实覆盖率", lambda s: s["fact_accuracy"]["rate"])
+    row("拒答正确率", lambda s: s["no_answer_accuracy"]["rate"])
+    if any(summaries[m].get("judge_accuracy") for m in modes):
+        row("LLM 裁判准确率", lambda s: (s.get("judge_accuracy") or {}).get("rate"))
+    cr = "chunk_retrieval"
+    row("块级 Recall@5", lambda s: (s.get(cr) or {}).get("recall_at_5"))
+    row("块级 Hit@1", lambda s: (s.get(cr) or {}).get("hit_at_1"))
+    row("块级 Hit@3", lambda s: (s.get(cr) or {}).get("hit_at_3"))
+    row("块级 MRR", lambda s: (s.get(cr) or {}).get("mrr"))
+    for mode in modes:
+        lines.append("")
+        lines.append(f"## {mode}")
+        lines.extend(_markdown_case_table(mode_results[mode]))
     Path(path).write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"已写入 Markdown 报告：{path}")
 
 
 def main(argv: list[str] | None = None) -> int:
-    """命令行入口：python -m app.eval [eval_set] [--judge] [--json ...] [--markdown ...]"""
+    """命令行入口：python -m app.eval [eval_set] [--judge] [--modes ...] [--json ...] [--markdown ...]"""
     parser = argparse.ArgumentParser(description="运行企业知识库问答评测集")
     parser.add_argument(
         "eval_set",
@@ -483,19 +607,36 @@ def main(argv: list[str] | None = None) -> int:
         help="评测集 YAML 路径（默认 eval/hr-eval.yaml）",
     )
     parser.add_argument("--judge", action="store_true", help="启用 LLM 裁判做语义判分（额外消耗 API）")
+    parser.add_argument(
+        "--modes",
+        dest="modes",
+        metavar="dense,hybrid,rerank",
+        help="按逗号/空白分隔的检索方式跑多方式对比（dense/hybrid/rerank）；缺省用当前配置单跑",
+    )
     parser.add_argument("--json", dest="json_out", metavar="PATH", help="把逐题结果写入 JSON 文件")
     parser.add_argument("--markdown", dest="md_out", metavar="PATH", help="把报告写入 Markdown 文件")
     args = parser.parse_args(argv)
 
     _reconfigure_stdio()
     kb_name, cases = load_eval_set(Path(args.eval_set))
-    results = run_eval(kb_name, cases, get_provider(), get_provider(for_embeddings=True), judge=args.judge)
-    summary = summarize(results)
-    print_report(results, summary)
-    if args.json_out:
-        write_json(Path(args.json_out), results, summary)
-    if args.md_out:
-        write_markdown(Path(args.md_out), results, summary)
+    chat_config = get_provider()
+    embedding_config = get_provider(for_embeddings=True)
+    modes = parse_modes(args.modes) if args.modes else None
+    if modes:
+        mode_results = run_eval_modes(kb_name, cases, chat_config, embedding_config, modes, judge=args.judge)
+        print_comparison(mode_results)
+        if args.json_out:
+            write_json_modes(Path(args.json_out), mode_results)
+        if args.md_out:
+            write_markdown_modes(Path(args.md_out), mode_results)
+    else:
+        results = run_eval(kb_name, cases, chat_config, embedding_config, judge=args.judge)
+        summary = summarize(results)
+        print_report(results, summary)
+        if args.json_out:
+            write_json(Path(args.json_out), results, summary)
+        if args.md_out:
+            write_markdown(Path(args.md_out), results, summary)
     return 0
 
 

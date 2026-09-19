@@ -74,3 +74,13 @@ def init_db() -> None:
         connection.exec_driver_sql(
             "ALTER TABLE document_chunks ADD COLUMN IF NOT EXISTS content_type VARCHAR(20) NOT NULL DEFAULT 'text'"
         )
+        # 增量同步（#29）：documents 记录源文件 mtime/size/path，用于变更检测。
+        connection.exec_driver_sql(
+            "ALTER TABLE documents ADD COLUMN IF NOT EXISTS source_path VARCHAR(500) NULL"
+        )
+        connection.exec_driver_sql(
+            "ALTER TABLE documents ADD COLUMN IF NOT EXISTS source_mtime DOUBLE PRECISION NULL"
+        )
+        connection.exec_driver_sql(
+            "ALTER TABLE documents ADD COLUMN IF NOT EXISTS source_size INTEGER NULL"
+        )

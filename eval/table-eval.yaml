@@ -1,0 +1,33 @@
+# 表格块质量基线（#30）：验证表格块（xlsx 转 Markdown 表格）的检索命中与事实覆盖。
+# 运行：python -m app.eval eval/table-eval.yaml --modes dense hybrid rerank --json table-result.json
+# 需先导入：python -m app.cli ingest examples/审批权限表.xlsx --knowledge-base table
+name: 表格检索回归
+knowledge_base: table
+cases:
+  - id: tbl-001
+    question: 100万以上的合同由谁审批？
+    expected_sources:
+      - 审批权限表.xlsx
+    expected_facts:
+      - 总经理
+    expected_chunk: 100万以上
+    difficulty: L1
+    category: factual
+  - id: tbl-002
+    question: 报销金额1万以下由谁审批？
+    expected_sources:
+      - 审批权限表.xlsx
+    expected_facts:
+      - 财务经理
+    expected_chunk: 财务经理
+    difficulty: L1
+    category: factual
+  - id: tbl-003
+    question: 采购事项全部金额档位由谁审批？
+    expected_sources:
+      - 审批权限表.xlsx
+    expected_facts:
+      - 分管领导
+    expected_chunk: 分管领导
+    difficulty: L2
+    category: factual

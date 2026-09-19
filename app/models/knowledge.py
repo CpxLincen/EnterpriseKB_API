@@ -15,7 +15,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from pgvector.sqlalchemy import Vector  # pgvector 提供的向量字段类型
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base  # SQLAlchemy 声明式基类
@@ -43,6 +43,9 @@ class Document(Base):
     filename: Mapped[str] = mapped_column(String(500))  # 原始文件名
     content_hash: Mapped[str] = mapped_column(String(64), index=True)  # 文件内容 SHA-256 哈希，用于导入去重
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())  # 导入时间
+    source_path: Mapped[str | None] = mapped_column(String(500), nullable=True)  # 源文件相对路径（增量同步用）
+    source_mtime: Mapped[float | None] = mapped_column(Float, nullable=True)  # 源文件修改时间戳（增量同步用）
+    source_size: Mapped[int | None] = mapped_column(Integer, nullable=True)  # 源文件大小（增量同步用）
     # 反向关系：所属知识库
     knowledge_base: Mapped[KnowledgeBase] = relationship(back_populates="documents")
     # 与文本块的一对多关系；删除文档时级联删除其全部文本块

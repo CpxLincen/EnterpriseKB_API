@@ -1,0 +1,5 @@
+# 可选重依赖：BGE 交叉编码器重排（rerank）。
+# 会带入 torch，体积较大，故不放入基础运行时依赖（requirements.txt）。
+# 安装：E:\EnterpriseKB\.venv\Scripts\python.exe -m pip install -r requirements-rerank.txt
+# 模型权重需另行下载到 models/bge-reranker-v2-m3（见 README 第 5 节）。
+FlagEmbedding>=1.2,<2.0

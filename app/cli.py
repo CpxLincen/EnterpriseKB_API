@@ -126,6 +126,42 @@ def rebuild_command(
         raise typer.Exit(1)
 
 
+@cli.command("sync")
+def sync_command(
+    source_dir: Path = typer.Argument(..., help="源文档目录（按 mtime/size 增量同步）"),
+    knowledge_base: str = typer.Option(..., "--knowledge-base", "-k", help="知识库名"),
+    delete_missing: bool = typer.Option(
+        False, "--delete-missing", help="删除源目录已不存在的文档"
+    ),
+) -> None:
+    """增量同步知识库：仅重导 mtime/size 变化的新增/修改文件（可选删除失效文档）。"""
+    from app.services.ingestion import sync_knowledge_base
+
+    init_db()
+    warnings_list: list[str] = []
+    try:
+        result = sync_knowledge_base(
+            knowledge_base,
+            source_dir,
+            get_provider(for_embeddings=True),
+            delete_missing=delete_missing,
+            warnings_out=warnings_list,
+        )
+    except RuntimeError as exc:
+        typer.echo(f"ERROR: {exc}", err=True)
+        raise typer.Exit(1) from exc
+    typer.echo(
+        f"Synced '{knowledge_base}': {result.processed} files, {result.chunks} chunks, "
+        f"{result.deleted} deleted."
+    )
+    for warning in warnings_list:
+        typer.echo(f"WARNING: {warning}", err=True)
+    for error in result.errors:
+        typer.echo(f"ERROR: {error}", err=True)
+    if result.errors:
+        raise typer.Exit(1)
+
+
 @cli.command("ask")
 def ask_command(question: str, knowledge_base: str = typer.Option("default", "--knowledge-base", "-k")) -> None:
     """向指定知识库提问，打印回答与引用来源。
@@ -257,20 +293,45 @@ def retention_command() -> None:
 def eval_command(
     eval_set: Path = typer.Option("eval/hr-eval.yaml", "--eval-set", help="评测集 YAML 文件路径"),
     judge: bool = typer.Option(False, "--judge", help="启用 LLM 裁判做语义判分（额外消耗 API）"),
+    modes: str = typer.Option(None, "--modes", help="按逗号/空白分隔的检索方式跑多方式对比（dense/hybrid/rerank）"),
     json_out: Path = typer.Option(None, "--json", help="将逐题结果写入 JSON 文件"),
     markdown_out: Path = typer.Option(None, "--markdown", help="将报告写入 Markdown 文件"),
 ) -> None:
     """运行知识库问答评测集，输出检索命中 / 事实覆盖 / 拒答正确率。"""
-    from app.services.eval import load_eval_set, print_report, run_eval, summarize, write_json, write_markdown
+    from app.services.eval import (
+        load_eval_set,
+        parse_modes,
+        print_comparison,
+        print_report,
+        run_eval,
+        run_eval_modes,
+        summarize,
+        write_json,
+        write_json_modes,
+        write_markdown,
+        write_markdown_modes,
+    )
 
     kb_name, cases = load_eval_set(eval_set)
-    results = run_eval(kb_name, cases, get_provider(), get_provider(for_embeddings=True), judge=judge)
-    summary = summarize(results)
-    print_report(results, summary)
-    if json_out is not None:
-        write_json(json_out, results, summary)
-    if markdown_out is not None:
-        write_markdown(markdown_out, results, summary)
+    chat_config = get_provider()
+    embedding_config = get_provider(for_embeddings=True)
+    if modes:
+        mode_results = run_eval_modes(
+            kb_name, cases, chat_config, embedding_config, parse_modes(modes), judge=judge
+        )
+        print_comparison(mode_results)
+        if json_out is not None:
+            write_json_modes(json_out, mode_results)
+        if markdown_out is not None:
+            write_markdown_modes(markdown_out, mode_results)
+    else:
+        results = run_eval(kb_name, cases, chat_config, embedding_config, judge=judge)
+        summary = summarize(results)
+        print_report(results, summary)
+        if json_out is not None:
+            write_json(json_out, results, summary)
+        if markdown_out is not None:
+            write_markdown(markdown_out, results, summary)
 
 
 if __name__ == "__main__":

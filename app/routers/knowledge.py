@@ -13,7 +13,13 @@ from app.models.knowledge import Document, DocumentChunk, KnowledgeBase
 from app.routers.deps import get_current_user, require_admin, require_kb_access
 from app.schemas import KnowledgeBaseRebuildRequest
 from app.services.audit import log_event
-from app.services.ingestion import ALLOWED_SUFFIXES, ingest_file_detailed, rebuild_knowledge_base
+from app.services.ingestion import (
+    ALLOWED_SUFFIXES,
+    LEGACY_SUFFIXES,
+    _LEGACY_TO_MODERN,
+    ingest_file_detailed,
+    rebuild_knowledge_base,
+)
 from app.services.providers import ProviderError
 from app.services.retrieval import invalidate
 
@@ -81,6 +87,13 @@ async def upload_document(
     # 安全校验：文件名去掉路径（防目录穿越），扩展名仅允许白名单
     filename = Path(file.filename or "document.txt").name
     suffix = Path(filename).suffix.lower()
+    if suffix in LEGACY_SUFFIXES:
+        modern = _LEGACY_TO_MODERN.get(suffix, ".docx/.xlsx/.pptx")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Legacy format '{suffix}' is not supported for ingestion. "
+            f"Please convert it to '{modern}' first.",
+        )
     if suffix not in ALLOWED_SUFFIXES:
         raise HTTPException(
             status_code=400,

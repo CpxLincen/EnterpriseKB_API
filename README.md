@@ -175,7 +175,8 @@ data: {"type":"error","message":"..."}         出错
 - 防幻觉门禁综合「稠密距离 + Rerank 分数」判定（`app/services/rag.py` 的 `should_refuse`，参数见 `config/models.yaml` 的 `retrieval.gate`）；
 - 认证中间件统一校验 Token，知识库级权限通过路由依赖控制。
 
-> **Rerank 依赖与模型**：需 `pip install FlagEmbedding`（已写入 requirements.txt）。
+> **Rerank 依赖与模型**：需 `pip install -r requirements-rerank.txt`（可选重依赖，会带入 torch，
+> 不放入基础 `requirements.txt`；生产镜像已一并安装）。
 > 模型约 2.3GB，默认路径 `models/bge-reranker-v2-m3`（已加入 `.gitignore`）。
 > 国内下载可走 ModelScope：
 > `modelscope download --model BAAI/bge-reranker-v2-m3 --local_dir E:\EnterpriseKB\models\bge-reranker-v2-m3`
@@ -189,6 +190,7 @@ data: {"type":"error","message":"..."}         出错
 ```powershell
 python -m app.eval                          # 默认跑 eval/hr-eval.yaml（零额外成本）
 python -m app.eval --judge                  # 启用 LLM 裁判做语义判分（额外消耗 API）
+python -m app.eval --modes dense hybrid rerank   # 三方式对比（与前端评测页同源）
 python -m app.eval --json out.json --markdown out.md   # 输出结果文件
 ```
 
@@ -210,6 +212,19 @@ GET  /eval/runs/{job_id}   查询进度与结果
 
 `modes` 可取 `dense`（纯向量）/ `hybrid`（向量+BM25+RRF）/ `rerank`
 （再叠加 BGE 交叉编码器），缺省三项全跑，便于对比不同检索方式的效果。
+
+### 6.1 自动化测试（pytest）
+
+```powershell
+# 安装测试依赖（pytest 等；在已装运行时依赖的基础上）
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+
+# 跑全部单测（DB-free，覆盖入库解析 / 检索纯函数 / 各格式端到端）
+.\.venv\Scripts\python.exe -m pytest
+```
+
+测试位于 `tests/`（`pytest.ini` 指定 `testpaths = tests`），文档构造器集中在
+`tests/fixtures.py`；`scripts/smoke_ingestion_p1.py` 是无需 pytest 即可独立运行的同源冒烟脚本。
 
 ## 7. 代码结构
 
@@ -244,9 +259,7 @@ app/
 
 1. 把当前未提交的多轮改动整理入库（git commit）；
 2. 防幻觉门禁模糊带（`neg-001` 与弱事实题重排分重叠），需更细信号或可接受误判率；
-3. `app.eval` 暴露 `--modes` 做三方式（向量/混合/Rerank）对比 CLI；
-4. 块级 hit@k/MRR 接入 CI 回归门禁；补 pytest 自动化测试；
-5. 评测集替换 / 补充真实用户问题；
-6. 文档解析：已支持 DOCX / XLSX / PPTX / PDF 表格结构化（含无边框检测与 DOCX/XLSX/HTML/PPTX 合并单元格）+ HTML / EPUB 正文；表格入库已做列语义增强（`列名：值`）；扫描 PDF OCR 为可选能力（`pip install rapidocr-onnxruntime` 后自动识别）；上传已做 magic bytes 内容嗅探、解析结构化指标进审计、单文档解析内存保护（`MAX_PARSE_BYTES`），并提供 `reingest` / `rebuild` 重建命令；图片/图表结构化、文档版本、增量同步待做；
-7. SSO 对真实 IdP 端到端实测；接入只读 MCP 与首个 Skill；
-8. 部署镜像纳入 FlagEmbedding 与重排模型分发；跟踪 Docker Desktop #531/#532 socket bug。
+3. 评测集替换 / 补充真实用户问题（负面样本偏少）；
+4. 文档解析：已支持 DOCX / XLSX / PPTX / PDF 表格结构化（含无边框 2 列检测、合并单元格、跨页续接、多栏阅读顺序）+ HTML / EPUB 正文；表格入库已做列语义增强（`列名：值`）；扫描 PDF OCR 为可选能力（`pip install rapidocr-onnxruntime` 后自动识别）；上传已做 magic bytes 内容嗅探、解析结构化指标进审计、单文档解析内存保护（`MAX_PARSE_BYTES`），并提供 `reingest` / `rebuild` 重建命令；图片/图表结构化、文档版本、增量同步待做；
+5. SSO 对真实 IdP 端到端实测；接入只读 MCP 与首个 Skill；
+6. 部署镜像纳入 FlagEmbedding 与重排模型分发（`requirements-rerank.txt` 已拆出，模型 2.3GB 需单独分发）；跟踪 Docker Desktop #531/#532 socket bug。
