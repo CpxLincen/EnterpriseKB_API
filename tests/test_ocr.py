@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 
 import pymupdf
+import pytest
 
 from app.services import ingestion
 
@@ -25,6 +26,7 @@ def test_ocr_missing_dependency(caplog, monkeypatch):
 
 
 def test_ocr_recognition_error(caplog, monkeypatch):
+    pytest.importorskip("numpy")  # 该分支在 numpy 之后执行，需 numpy 可用
     class _Boom:
         def __call__(self, image):  # noqa: D102
             raise RuntimeError("boom")
@@ -38,6 +40,7 @@ def test_ocr_recognition_error(caplog, monkeypatch):
 
 
 def test_ocr_empty_result(caplog, monkeypatch):
+    pytest.importorskip("numpy")  # 该分支在 numpy 之后执行，需 numpy 可用
     class _Empty:
         def __call__(self, image):  # noqa: D102
             return ([], None)
@@ -51,6 +54,7 @@ def test_ocr_empty_result(caplog, monkeypatch):
 
 
 def test_ocr_ok(monkeypatch):
+    pytest.importorskip("numpy")  # 该分支在 numpy 之后执行，需 numpy 可用
     class _Ok:
         def __call__(self, image):  # noqa: D102
             return ([("b", "你好"), ("b", "世界")], None)
