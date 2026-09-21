@@ -171,13 +171,16 @@ data: {"type":"error","message":"..."}         出错
   用 RRF 融合重排（见 `app/services/retrieval.py`），比纯向量检索命中率更高；
 - RRF 之后可选 **BGE 交叉编码器 Rerank**（`app/services/rerank.py`，模型
   `bge-reranker-v2-m3`）进一步精排 top-k；由 `config/models.yaml` 的
-  `retrieval.rerank` 控制开关与本地模型路径；
-- 防幻觉门禁综合「稠密距离 + Rerank 分数」判定（`app/services/rag.py` 的 `should_refuse`，参数见 `config/models.yaml` 的 `retrieval.gate`）；
+  `retrieval.rerank` 控制开关与模型路径（本地权重用 `RERANK_MODEL_PATH` 环境变量覆盖）；
+  模型缺失时自动降级为混合检索（dense+BM25+RRF），不阻断问答；
+- 防幻觉门禁综合「稠密距离 + Rerank 分数」判定（`app/services/rag.py` 的 `gate_decision`，参数见 `config/models.yaml` 的 `retrieval.gate`）；
 - 认证中间件统一校验 Token，知识库级权限通过路由依赖控制。
 
 > **Rerank 依赖与模型**：需 `pip install -r requirements-rerank.txt`（可选重依赖，会带入 torch，
 > 不放入基础 `requirements.txt`；生产镜像已一并安装）。
-> 模型约 2.3GB，默认路径 `models/bge-reranker-v2-m3`（已加入 `.gitignore`）。
+> 模型约 2.3GB，默认模型 ID 为 `BAAI/bge-reranker-v2-m3`；本地权重建议下载后通过
+> `RERANK_MODEL_PATH` 环境变量指定（如 `E:\EnterpriseKB\models\bge-reranker-v2-m3`，
+> 该目录已加入 `.gitignore`）。模型缺失时后端自动降级为混合检索，不会导致问答 500。
 > 国内下载可走 ModelScope：
 > `modelscope download --model BAAI/bge-reranker-v2-m3 --local_dir E:\EnterpriseKB\models\bge-reranker-v2-m3`
 > 或 HuggingFace（设 `HF_ENDPOINT=https://hf-mirror.com`）。有 NVIDIA GPU 时安装
@@ -226,6 +229,17 @@ GET  /eval/runs/{job_id}   查询进度与结果
 测试位于 `tests/`（`pytest.ini` 指定 `testpaths = tests`），文档构造器集中在
 `tests/fixtures.py`；`scripts/smoke_ingestion_p1.py` 是无需 pytest 即可独立运行的同源冒烟脚本。
 
+覆盖率统计已接入（`pytest.ini` 默认 `--cov=app --cov-report=term-missing`），
+`pytest` 会顺带输出各模块覆盖率与总覆盖率；也可显式指定：
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest --cov=app --cov-report=term-missing
+```
+
+> 说明：现有单测为 DB-free，主要覆盖解析/切块/检索纯函数与各格式端到端，因此
+> 路由层、SSO、评测、会话落库等需要数据库 / LLM / 网络的链路覆盖率偏低，属预期；
+> 随真实库端到端测试与功能开发逐步补足，不设 `--cov-fail-under` 硬门禁。
+
 ## 7. 代码结构
 
 后端已按职责分层（2026-09-08 重构），避免代码平铺在 `app/` 根目录：
@@ -242,15 +256,17 @@ app/
 ├── models/           # ORM 模型
 │   ├── knowledge.py  #   KnowledgeBase / Document / DocumentChunk
 │   ├── auth.py       #   User / KnowledgeBaseAccess
-│   └── audit.py      #   AuditLog
+│   ├── conversation.py # Conversation / ConversationMessage
+│   ├── audit.py      #   AuditLog
+│   └── review.py     #   ReviewItem（人工复核）
 ├── schemas/          # Pydantic 请求模型（ChatRequest / LoginRequest / RunEvalRequest）
 ├── services/         # 业务逻辑
 │   ├── providers.py / ingestion.py / retrieval.py / rerank.py / rag.py
-│   ├── audit.py / eval.py / sso.py
+│   ├── audit.py / eval.py / sso.py / memory.py / conversation.py / review.py
 └── routers/          # 路由层（APIRouter + Depends）
     ├── deps.py       #   共享依赖（get_current_user / require_kb_access / ensure_kb_access / require_admin）
     ├── middleware.py #   认证中间件
-    └── health.py / auth.py / knowledge.py / chat.py / eval.py / audit.py
+    └── health.py / auth.py / knowledge.py / chat.py / conversations.py / eval.py / audit.py / review.py
 ```
 
 路由在 `app/routers/__init__.py` 的 `api_router` 中聚合，`app/api.py` 只做一次 `include_router(api_router)`。
