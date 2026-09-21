@@ -40,6 +40,7 @@ services:
       MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-104857600}
       MAX_PARSE_BYTES: ${MAX_PARSE_BYTES:-536870912}
       AUDIT_LOG_FILE: ${AUDIT_LOG_FILE:-}
+      RERANK_MODEL_PATH: ${RERANK_MODEL_PATH:-}
     depends_on:
       db:
         condition: service_healthy

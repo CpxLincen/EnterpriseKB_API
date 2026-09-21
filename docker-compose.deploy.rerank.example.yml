@@ -1,0 +1,11 @@
+# 可选覆盖文件：为 backend 挂载宿主机上的 BGE rerank 模型目录（方案一）。
+# 用法（复制为 docker-compose.deploy.rerank.yml 并修改宿主机路径后）：
+#   docker compose -f docker-compose.deploy.yml -f docker-compose.deploy.rerank.yml up -d
+services:
+  backend:
+    environment:
+      # 容器内路径（挂载目标），不是宿主机路径
+      RERANK_MODEL_PATH: /models/bge-reranker-v2-m3
+    volumes:
+      # 左侧改为宿主机实际模型目录
+      - /opt/kb/models/bge-reranker-v2-m3:/models/bge-reranker-v2-m3:ro

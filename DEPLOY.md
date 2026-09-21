@@ -133,7 +133,9 @@ services:
       OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI:-}
       CORS_ORIGINS: ${CORS_ORIGINS:-}
       MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-104857600}
+      MAX_PARSE_BYTES: ${MAX_PARSE_BYTES:-536870912}
       AUDIT_LOG_FILE: ${AUDIT_LOG_FILE:-}
+      RERANK_MODEL_PATH: ${RERANK_MODEL_PATH:-}
     depends_on:
       db:
         condition: service_healthy
@@ -181,6 +183,9 @@ docker push <registry>/<ns>/enterprise-kb-frontend:1.0.0
 | `MAX_UPLOAD_BYTES` | 否 | `104857600` | 上传大小上限（100MB） |
 | `MAX_PARSE_BYTES` | 否 | `536870912` | 单文档解析内存上限（512MB），限制读入大小与 ZIP 解压后体积，防 zip bomb |
 | `AUDIT_LOG_FILE` | 否 | - | 审计日志文件路径（留空仅输出 stdout） |
+| `CONVERSATION_ARCHIVE_DAYS` | 否 | - | 活跃会话超期自动归档天数（留空或 ≤0 关闭） |
+| `CONVERSATION_RETENTION_DAYS` | 否 | - | 归档会话超期永久删除天数（留空或 ≤0 关闭） |
+| `AUDIT_RETENTION_DAYS` | 否 | - | 审计日志保留天数（留空或 ≤0 为永久保留） |
 
 切换回答模型：编辑 `E:\EnterpriseKB\config\models.yaml` 的 `active_provider`
 （`qwen` / `deepseek`）。Embedding 固定走 Qwen；更换 embedding 模型/维度后需重建知识库。
@@ -252,13 +257,31 @@ docker compose -f docker-compose.deploy.yml restart backend # 重启后端
 4. 后端上传另有 `MAX_UPLOAD_BYTES`（默认 100MB）与扩展名白名单校验，请与 Nginx 的
    `client_max_body_size` 保持一致。
 5. 审计日志默认输出到容器 stdout，可用 `AUDIT_LOG_FILE` 落盘或接入日志采集。
-6. **Rerank 模型分发（约 2.3GB，不随代码入镜像）**：重排需要本地权重
-   `models/bge-reranker-v2-m3`（`.gitignore` 排除）。两种方式二选一：
-   - **挂载数据卷（推荐，简单）**：先在宿主机用
-     `scripts/download-rerank-model.ps1` 下载到宿主机目录，再在
-     `docker-compose.deploy.yml` 的 backend 服务加一行 volume，把该目录挂到容器内与
-     `config/models.yaml` 的 `retrieval.rerank.model` 一致的路径；
-    - **构建进镜像**：修改 `Dockerfile`，在 `pip install` 之后执行模型下载（需 `modelscope`
-      或 `huggingface-cli` 与构建网络），镜像体积将显著增大。
+6. **Rerank 模型分发（约 2.3GB，不随代码入镜像）**：重排需要本地权重，默认模型 ID
+   为 `BAAI/bge-reranker-v2-m3`，本地路径用 `RERANK_MODEL_PATH` 环境变量覆盖
+   （模型目录已加入 `.gitignore`）。三种方式：
+   - **挂载数据卷（推荐，简单）**：先把模型下载到宿主机目录
+     （如 `/opt/kb/models/bge-reranker-v2-m3`）。下载命令（Linux 服务器）：
+     ```bash
+     # ModelScope 源（国内推荐）
+     ./scripts/download-rerank-model.sh /opt/kb/models/bge-reranker-v2-m3
+     # 或 HuggingFace（自动走 hf-mirror 镜像）
+     ./scripts/download-rerank-model.sh /opt/kb/models/bge-reranker-v2-m3 huggingface
+     ```
+     然后把仓库自带的 `docker-compose.deploy.rerank.example.yml` 复制为
+     `docker-compose.deploy.rerank.yml`，把其中宿主机路径改成实际目录，启动时叠加：
+     ```bash
+     docker compose -f docker-compose.deploy.yml -f docker-compose.deploy.rerank.yml up -d --build
+     ```
+     该覆盖文件会为 backend 挂载模型目录，并设 `RERANK_MODEL_PATH` 为容器内路径
+     `/models/bge-reranker-v2-m3`（**容器内路径，不是宿主机路径**）。
+   - **自动下载（依赖外网，容器重建后需重下）**：不设 `RERANK_MODEL_PATH`，首次问答时
+     FlagEmbedding 会按模型 ID 从 HuggingFace 下载到容器内 HF 缓存
+     （`/root/.cache/huggingface/hub`）；国内建议设 `HF_ENDPOINT=https://hf-mirror.com`，
+     并把该缓存目录也挂成卷以免容器重建后丢失。
+   - **构建进镜像**：修改 `Dockerfile`，在 `pip install` 之后执行模型下载（需 `modelscope`
+     或 `huggingface-cli` 与构建网络），镜像体积将显著增大。
+   模型缺失/加载失败时，后端会记录 warning 并自动降级为混合检索（dense+BM25+RRF），
+   不会导致问答 500；也可把 `retrieval.rerank.enabled` 设为 `false` 完全关闭重排。
 7. **老格式（.doc/.xls/.ppt/.rtf/.odt/.ods/.odp）不支持入库**：入库时会被筛除并提示
    先转换为对应新格式（`.docx/.xlsx/.pptx`），请在上传前完成转换。

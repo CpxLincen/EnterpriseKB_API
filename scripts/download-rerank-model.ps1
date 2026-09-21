@@ -26,4 +26,4 @@ else {
     if (-not $env:HF_ENDPOINT) { $env:HF_ENDPOINT = "https://hf-mirror.com" }
     huggingface-cli download BAAI/bge-reranker-v2-m3 --local-dir $Target
 }
-Write-Host "完成。请确认 config/models.yaml 的 retrieval.rerank.model 指向：$Target"
+Write-Host "完成。请将 .env 的 RERANK_MODEL_PATH 指向：$Target"
