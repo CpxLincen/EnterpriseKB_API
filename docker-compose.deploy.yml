@@ -23,6 +23,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        INSTALL_RERANK: ${INSTALL_RERANK:-true}
     environment:
       DATABASE_URL: postgresql+psycopg://enterprise_kb:${POSTGRES_PASSWORD:-enterprise_kb}@db:5432/enterprise_kb
       QWEN_API_KEY: ${QWEN_API_KEY}
@@ -40,6 +42,7 @@ services:
       MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-104857600}
       MAX_PARSE_BYTES: ${MAX_PARSE_BYTES:-536870912}
       AUDIT_LOG_FILE: ${AUDIT_LOG_FILE:-}
+      RERANK_ENABLED: ${RERANK_ENABLED:-}
       RERANK_MODEL_PATH: ${RERANK_MODEL_PATH:-}
     depends_on:
       db:

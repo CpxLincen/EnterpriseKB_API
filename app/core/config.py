@@ -160,6 +160,14 @@ def _positive_int_env(name: str) -> int | None:
     return value if value > 0 else None
 
 
+def _env_bool(name: str) -> bool | None:
+    """读取布尔型环境变量；未设置返回 None（表示「未覆盖，用默认/配置文件」）。"""
+    raw = os.getenv(name)
+    if raw is None:
+        return None
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
 def conversation_archive_days() -> int | None:
     """活跃会话超过该天数未更新时自动归档；未配置/≤0 表示关闭。"""
     return _positive_int_env("CONVERSATION_ARCHIVE_DAYS")
@@ -220,11 +228,16 @@ def retrieval_config() -> RetrievalConfig:
     rerank_floor = gate.get("rerank_floor")
     rerank_review = gate.get("rerank_review")
     rerank_rescue = gate.get("rerank_rescue")
+    rerank_enabled_env = _env_bool("RERANK_ENABLED")
     return RetrievalConfig(
         top_k=int(raw.get("top_k", 5)),
         candidates=int(raw.get("candidates", 20)),
         rrf_k=int(raw.get("rrf_k", 60)),
-        rerank_enabled=bool(rerank.get("enabled", False)),
+        rerank_enabled=(
+            bool(rerank.get("enabled", False))
+            if rerank_enabled_env is None
+            else rerank_enabled_env
+        ),
         rerank_model=os.getenv("RERANK_MODEL_PATH")
         or str(rerank.get("model", "BAAI/bge-reranker-v2-m3")),
         rerank_candidates=int(rerank.get("candidates", 10)),
