@@ -13,7 +13,10 @@ RRF 融合只依据“排名倒数”，把最终精确度留给这一步：用 
 
 from __future__ import annotations
 
+import logging
 import threading
+
+logger = logging.getLogger(__name__)
 
 
 class _BgeReranker:
@@ -50,6 +53,8 @@ class _BgeReranker:
 
 _rerankers: dict[str, _BgeReranker] = {}
 _lock = threading.Lock()
+# 加载失败的模型（按 model:fp16 键）会在进程内记住，后续请求直接降级，避免反复重试加载
+_unavailable: set[str] = set()
 
 
 def _resolve_fp16(fp16: str) -> bool:
@@ -73,3 +78,28 @@ def get_reranker(model_name: str, fp16: str = "auto") -> _BgeReranker:
             reranker = _BgeReranker(model_name, fp16)
             _rerankers[key] = reranker
         return reranker
+
+
+def score_rerank(
+    query: str, texts: list[str], model_name: str, fp16: str = "auto"
+) -> list[float] | None:
+    """对候选文本做交叉编码器打分；rerank 不可用时返回 None，由调用方降级。
+
+    失败（FlagEmbedding 未安装 / 模型路径不存在 / 下载失败）会记录一次 warning，
+    并在进程内记住该模型不可用：后续请求直接返回 None，避免每次问答都重试加载
+    2.3GB 的模型。空候选直接返回空列表（视为成功）。
+    """
+    if not texts:
+        return []
+    key = f"{model_name}:{fp16}"
+    if key in _unavailable:
+        return None
+    try:
+        return get_reranker(model_name, fp16).score(query, texts)
+    except RuntimeError as exc:  # noqa: BLE001 - 已降级并记录，不能阻断问答
+        with _lock:
+            _unavailable.add(key)
+        logger.warning(
+            "Rerank 不可用，本次及后续将降级为混合检索（dense+BM25+RRF）：%s", exc
+        )
+        return None

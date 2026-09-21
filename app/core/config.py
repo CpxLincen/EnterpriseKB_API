@@ -170,6 +170,11 @@ def conversation_retention_days() -> int | None:
     return _positive_int_env("CONVERSATION_RETENTION_DAYS")
 
 
+def audit_retention_days() -> int | None:
+    """审计日志保留天数，超过即删除；未配置/≤0 表示永久保留（默认）。"""
+    return _positive_int_env("AUDIT_RETENTION_DAYS")
+
+
 def _raw_config() -> dict:
     """读取并解析 config/models.yaml，返回原始配置字典。"""
     with (ROOT / "config" / "models.yaml").open("r", encoding="utf-8") as f:
@@ -220,7 +225,8 @@ def retrieval_config() -> RetrievalConfig:
         candidates=int(raw.get("candidates", 20)),
         rrf_k=int(raw.get("rrf_k", 60)),
         rerank_enabled=bool(rerank.get("enabled", False)),
-        rerank_model=str(rerank.get("model", "BAAI/bge-reranker-v2-m3")),
+        rerank_model=os.getenv("RERANK_MODEL_PATH")
+        or str(rerank.get("model", "BAAI/bge-reranker-v2-m3")),
         rerank_candidates=int(rerank.get("candidates", 10)),
         rerank_fp16=str(rerank.get("fp16", "auto")),
         rerank_floor=float(rerank_floor) if rerank_floor is not None else None,

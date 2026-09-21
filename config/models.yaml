@@ -23,7 +23,8 @@ providers:
 #   rrf_k       RRF 融合常数（越大排名权重越平缓）
 #   rerank      可选的 BGE 交叉编码器重排（进一步提升 top-k 精度）：
 #     enabled     是否启用（首次使用需下载模型约 568MB，且需 FlagEmbedding 依赖）
-#     model       重排模型名（默认 bge-reranker-v2-m3，多语言、支持中文）
+#     model       重排模型名（HuggingFace 模型 ID 或本地路径；默认 BAAI/bge-reranker-v2-m3）
+#                 本地权重路径建议用 RERANK_MODEL_PATH 环境变量覆盖，避免把机器路径写进仓库
 #     candidates  RRF 结果送入重排器的候选数
 #     fp16        半精度推理：auto（有 CUDA 自动开）/ true / false
 retrieval:
@@ -32,7 +33,7 @@ retrieval:
   rrf_k: 60
   rerank:
     enabled: true
-    model: E:/EnterpriseKB/models/bge-reranker-v2-m3
+    model: BAAI/bge-reranker-v2-m3
     candidates: 10
     fp16: auto
   # 防幻觉门禁：以稠密距离为主、Rerank 分为辅（见 app/rag.py 的 should_refuse）。

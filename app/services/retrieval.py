@@ -21,7 +21,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.knowledge import Document, DocumentChunk, KnowledgeBase
-from app.services.rerank import get_reranker
+from app.services.rerank import score_rerank
 from app.core.config import RetrievalConfig
 
 _CJK_CHAR = re.compile(r"[\u4e00-\u9fff]")
@@ -238,12 +238,16 @@ def hybrid_search(
         # 4) Rerank：取 RRF 前 rerank_candidates 个候选，用 BGE 交叉编码器逐对打分重排
         pool_ids = ordered_ids[: config.rerank_candidates]
         pool_ordered = _fetch_chunks(session, pool_ids)
-        scores = get_reranker(config.rerank_model, config.rerank_fp16).score(
-            question, [c.content for c in pool_ordered]
+        scores = score_rerank(
+            question, [c.content for c in pool_ordered], config.rerank_model, config.rerank_fp16
         )
-        ranked = sorted(zip(pool_ordered, scores), key=lambda pair: pair[1], reverse=True)
-        top_chunks = [chunk for chunk, _ in ranked[: config.top_k]]
-        best_rerank_score = max(scores) if scores else None
+        if scores is None:
+            # rerank 不可用（模型/依赖缺失）：降级为 RRF 混合排序，不阻断问答
+            top_chunks = _fetch_chunks(session, ordered_ids[: config.top_k])
+        else:
+            ranked = sorted(zip(pool_ordered, scores), key=lambda pair: pair[1], reverse=True)
+            top_chunks = [chunk for chunk, _ in ranked[: config.top_k]]
+            best_rerank_score = max(scores) if scores else None
     else:
         # 4) 混合模式：直接按 RRF 顺序取 top_k
         top_chunks = _fetch_chunks(session, ordered_ids[: config.top_k])
@@ -313,12 +317,17 @@ def multi_hybrid_search(
         ]
         pool_ids = list(dict.fromkeys(dense_pool + sparse_pool))[: config.rerank_candidates * 2]
         pool = _fetch_chunks(session, pool_ids)
-        scores = get_reranker(config.rerank_model, config.rerank_fp16).score(
-            question, [c.content for c in pool]
+        scores = score_rerank(
+            question, [c.content for c in pool], config.rerank_model, config.rerank_fp16
         )
-        ranked = sorted(zip(pool, scores), key=lambda pair: pair[1], reverse=True)
-        top_chunks = [chunk for chunk, _ in ranked[: config.top_k]]
-        best_rerank_score = max(scores) if scores else None
+        if scores is None:
+            # rerank 不可用：降级为跨库稠密距离排序，不阻断问答
+            dense_order = [row.DocumentChunk.id for row in dense_rows][: config.top_k]
+            top_chunks = _fetch_chunks(session, dense_order)
+        else:
+            ranked = sorted(zip(pool, scores), key=lambda pair: pair[1], reverse=True)
+            top_chunks = [chunk for chunk, _ in ranked[: config.top_k]]
+            best_rerank_score = max(scores) if scores else None
     else:
         # 4) 无 rerank：按稠密距离全局取 top_k（dense 可比较；hybrid 也退化为此）
         dense_order = [row.DocumentChunk.id for row in dense_rows][: config.top_k]
