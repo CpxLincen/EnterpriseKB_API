@@ -32,6 +32,9 @@ from app.services.memory import MEMORY_REUSE, build_turn_plan
 from app.services.rag import (
     answer_from_stored,
     ask,
+    citation_to_dict,
+    compact_citation_dicts,
+    head_excerpt,
     iter_answer_events,
     iter_answer_reuse_events,
     serialize_chunks,
@@ -58,16 +61,63 @@ def _serialize_conversation(conv: Conversation, message_count: int | None = None
     }
 
 
-def _serialize_message(msg: ConversationMessage) -> dict:
+def _serialize_message(
+    msg: ConversationMessage, excerpt_map: dict[int, str] | None = None
+) -> dict:
+    """序列化一条消息；对「去重后」的引用（无 excerpt）按 chunk_id 补回块首摘要。"""
+    citations: list[dict] = []
+    for c in msg.citations or []:
+        if not isinstance(c, dict):
+            citations.append(c)
+            continue
+        if c.get("excerpt"):
+            citations.append(c)  # 旧格式（已带摘要）直接透传
+            continue
+        cid = c.get("chunk_id")
+        excerpt = ""
+        if cid is not None and excerpt_map:
+            try:
+                excerpt = excerpt_map.get(int(cid), "")
+            except (TypeError, ValueError):
+                excerpt = ""
+        citations.append({**c, "excerpt": excerpt})
     return {
         "id": msg.id,
         "role": msg.role,
         "content": msg.content,
-        "citations": msg.citations or [],
+        "citations": citations,
         "decision": msg.decision,
         "memory": msg.memory,
         "created_at": _iso(msg.created_at),
     }
+
+
+def _citation_excerpt_map(messages: list[ConversationMessage], session) -> dict[int, str]:
+    """批量取回消息引用指向的文档块，返回 chunk_id → 块首摘要（供读取时补 excerpt）。"""
+    chunk_ids: set[int] = set()
+    for m in messages:
+        if m.role != "assistant" or not m.citations:
+            continue
+        for c in m.citations:
+            if not isinstance(c, dict):
+                continue
+            cid = c.get("chunk_id")
+            if cid is None:
+                continue
+            try:
+                chunk_ids.add(int(cid))
+            except (TypeError, ValueError):
+                continue
+    if not chunk_ids:
+        return {}
+    from app.models.knowledge import DocumentChunk  # 延迟导入，保持模块轻量
+
+    rows = session.execute(
+        select(DocumentChunk.id, DocumentChunk.content).where(
+            DocumentChunk.id.in_(chunk_ids)
+        )
+    ).all()
+    return {cid: head_excerpt(content) for cid, content in rows}
 
 
 def _get_owned_conversation(session, conversation_id: int, user: User) -> Conversation:
@@ -182,7 +232,8 @@ def get_conversation(
         )
         has_more = len(rows) > limit
         rows = rows[:limit]
-        messages = [_serialize_message(m) for m in rows]
+        excerpt_map = _citation_excerpt_map(rows, session)
+        messages = [_serialize_message(m, excerpt_map) for m in rows]
         return {
             **_serialize_conversation(conv, message_count=total),
             "total": total,
@@ -318,7 +369,7 @@ def conversation_chat(
                 conversation_id=conv.id,
                 role="assistant",
                 content=answer,
-                citations=[c.__dict__ for c in citations],
+                citations=[citation_to_dict(c) for c in citations],
                 decision=decision,
                 context_chunks=context_chunks,
                 memory=plan.type,
@@ -438,7 +489,7 @@ def conversation_chat_stream(
                         conversation_id=conv_id,
                         role="assistant",
                         content="".join(answer_parts),
-                        citations=citations,
+                        citations=compact_citation_dicts(citations),
                         decision=decision,
                         context_chunks=context_chunks,
                         memory=plan.type,

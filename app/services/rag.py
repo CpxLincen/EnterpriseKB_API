@@ -36,11 +36,44 @@ SYSTEM_PROMPT = """你是企业知识库助手。请严格按以下规则回答�
 class Citation:
     """单条引用信息：指出回答依据来自哪个文件的哪一页哪一块。"""
 
+    chunk_id: int | None  # 文档块主键（稳定引用；摘要按需重建，避免跨轮重复存储）
     filename: str  # 来源文件名
     page_number: int | None  # 页码（非 PDF 为 None）
     chunk_index: int  # 文本块在文档内的序号
     excerpt: str  # 引用片段摘要（截取前 240 字符）
     knowledge_base: str = ""  # 来源知识库名（自动路由时标注具体命中库）
+
+
+def head_excerpt(text: str, width: int = 280) -> str:
+    """取文本块开头作为引用摘要（历史消息按需重建时使用，不做问题相关性滑动窗口）。"""
+    return text.strip()[:width]
+
+
+# 引用落库时保留的字段（去重核心：不落 excerpt，摘要读取时按 chunk_id 实时重建）
+CITATION_STORE_FIELDS = ("chunk_id", "filename", "page_number", "chunk_index", "knowledge_base")
+
+
+def citation_to_dict(c: Citation) -> dict:
+    """把 Citation 压缩为落库形态：只存稳定指针与短元数据，不含摘要。"""
+    return {
+        "chunk_id": c.chunk_id,
+        "filename": c.filename,
+        "page_number": c.page_number,
+        "chunk_index": c.chunk_index,
+        "knowledge_base": c.knowledge_base,
+    }
+
+
+def compact_citation_dicts(citations: list[dict] | None) -> list[dict] | None:
+    """把引用 dict 列表压缩为落库形态（去掉 excerpt，保留稳定指针与短元数据）。"""
+    if citations is None:
+        return None
+    out: list[dict] = []
+    for d in citations:
+        item = {k: d.get(k) for k in CITATION_STORE_FIELDS}
+        item.setdefault("chunk_id", None)  # 兼容无 chunk_id 的旧对象
+        out.append(item)
+    return out
 
 
 def _table_header_indices(lines: list[str]) -> tuple[int, int]:
@@ -226,7 +259,14 @@ def retrieve_context(
         return chunks, [], None, decision
     # 6. 组装引用列表（文件名、页码、块序号、内容摘要）与上下文
     citations = [
-        Citation(c.document.filename, c.page_number, c.chunk_index, _excerpt(c.content, question), kb_name)
+        Citation(
+            c.id,
+            c.document.filename,
+            c.page_number,
+            c.chunk_index,
+            _excerpt(c.content, question),
+            kb_name,
+        )
         for c in chunks
     ]
     context = "<资料>\n" + "\n\n".join(
@@ -280,6 +320,7 @@ def _retrieve_multi(
         return chunks, [], None, decision
     citations = [
         Citation(
+            c.id,
             c.document.filename,
             c.page_number,
             c.chunk_index,
@@ -304,6 +345,7 @@ def serialize_chunks(chunks: list[DocumentChunk], citations: list[Citation]) -> 
     excerpts = [c.excerpt for c in citations]
     return [
         {
+            "chunk_id": c.id,
             "knowledge_base": c.document.knowledge_base.name,
             "filename": c.document.filename,
             "page_number": c.page_number,
@@ -319,6 +361,7 @@ def citations_from_stored_chunks(stored: list[dict] | None) -> list[Citation]:
     """从落库的 context_chunks 重建引用列表（reuse 场景使用）。"""
     return [
         Citation(
+            chunk_id=item.get("chunk_id"),
             filename=item.get("filename", ""),
             page_number=item.get("page_number"),
             chunk_index=int(item.get("chunk_index", i + 1)),

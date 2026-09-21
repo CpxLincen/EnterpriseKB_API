@@ -5,6 +5,7 @@
 启动入口保持兼容：`uvicorn app.api:app`。
 """
 
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -14,8 +15,10 @@ from app.core.config import cors_origins
 from app.core.database import init_db
 from app.routers import api_router
 from app.routers.middleware import auth_middleware
-from app.services.audit import log_event
+from app.services.audit import apply_audit_retention, log_event
 from app.services.conversation import apply_retention
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -31,7 +34,17 @@ async def lifespan(app: FastAPI):
                 extra=result,
             )
     except Exception:  # noqa: BLE001 - 保留策略失败不能阻断启动
-        pass
+        logger.warning("会话保留策略执行失败（不影响启动）", exc_info=True)
+    try:
+        audit_result = apply_audit_retention()
+        if audit_result["deleted"]:
+            log_event(
+                "audit_retention",
+                detail=f"startup: deleted={audit_result['deleted']}",
+                extra=audit_result,
+            )
+    except Exception:  # noqa: BLE001 - 保留策略失败不能阻断启动
+        logger.warning("审计日志保留策略执行失败（不影响启动）", exc_info=True)
     yield
 
 

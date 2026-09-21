@@ -11,7 +11,7 @@ import json
 import logging
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 # Windows 下重定向到文件时默认用本地编码（如 GBK），导致中文审计日志乱码；
 # 统一强制 stdout/stderr 为 UTF-8，便于日志采集与跨平台一致。
@@ -94,3 +94,27 @@ def _persist_to_db(
             session.commit()
     except Exception:  # noqa: BLE001 - 审计落库失败不能影响业务请求
         logger.exception("Failed to persist audit log to database.")
+
+
+def apply_audit_retention(now: datetime | None = None) -> dict:
+    """执行审计日志保留策略：删除超过 AUDIT_RETENTION_DAYS 天的记录。
+
+    未配置（或 ≤0）时跳过并返回 deleted=0，实现「默认永久保留」。
+    供后端启动钩子 / CLI 定期调用；删除本身不影响主业务流程。
+    """
+    from sqlalchemy import delete  # 延迟导入，避免模块加载顺序问题
+
+    from app.core.config import audit_retention_days
+    from app.core.database import SessionLocal
+    from app.models.audit import AuditLog
+
+    days = audit_retention_days()
+    if not days:
+        return {"deleted": 0, "retention_days": None}
+    now = now or datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=days)
+    with SessionLocal() as session:
+        result = session.execute(delete(AuditLog).where(AuditLog.ts < cutoff))
+        session.commit()
+        deleted = result.rowcount or 0
+    return {"deleted": deleted, "retention_days": days}

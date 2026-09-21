@@ -289,6 +289,22 @@ def retention_command() -> None:
     )
 
 
+@cli.command("audit-retention")
+def audit_retention_command() -> None:
+    """执行审计日志保留策略：删除超过 AUDIT_RETENTION_DAYS 天的审计记录。
+
+    未配置（或 ≤0）时跳过（默认永久保留）。可挂到系统定时任务定期执行。
+    """
+    from app.services.audit import apply_audit_retention
+
+    init_db()
+    result = apply_audit_retention()
+    typer.echo(
+        f"audit-retention done: deleted={result['deleted']} "
+        f"(retention_days={result['retention_days']})"
+    )
+
+
 @cli.command("eval")
 def eval_command(
     eval_set: Path = typer.Option("eval/hr-eval.yaml", "--eval-set", help="评测集 YAML 文件路径"),
