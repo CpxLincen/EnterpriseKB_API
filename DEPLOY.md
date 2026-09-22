@@ -217,10 +217,15 @@ curl -X POST http://<服务器IP>:8080/chat \
   -d '{"question":"年假如何计算？","knowledge_base":"hr"}'
 ```
 
-> 首次部署后需创建管理员并授权知识库（在后端容器内执行，或经 SSH 到服务器本机）：
+> 首次部署后需创建管理员、导入文档并授权（在后端容器内执行，或经 SSH 到服务器本机）。
+> 注意：① `grant` 要求知识库已存在，因此先 `ingest` 导入文档创建知识库，再执行 `grant`；
+> ② 后端镜像只打包 `app/` 与 `config/`，`examples/` 不在镜像内，需先用 `docker compose cp`
+> 把示例文档复制进容器再 `ingest`。
 >
 > ```bash
 > docker compose -f docker-compose.deploy.yml exec backend python -m app.cli create-user admin --role admin
+> docker compose -f docker-compose.deploy.yml cp examples/employee-handbook.md backend:/tmp/employee-handbook.md
+> docker compose -f docker-compose.deploy.yml exec backend python -m app.cli ingest /tmp/employee-handbook.md --knowledge-base hr
 > docker compose -f docker-compose.deploy.yml exec backend python -m app.cli grant admin --knowledge-base hr --write
 > ```
 

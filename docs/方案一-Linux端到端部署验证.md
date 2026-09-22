@@ -16,6 +16,10 @@ df -h                     # 磁盘预留 >= 20G（模型 + 两个镜像 + 数据
 > 只是 Rerank 用 CPU 推理、首次加载模型较慢、单次提问可能延迟几秒~几十秒，属正常。
 > 若要 GPU 加速，需额外装 CUDA 版 torch 并在 compose 加 `gpus` 配置（见文末「可选」）。
 
+> **一键验证脚本**：仓库提供 `scripts/verify-linux-deploy.sh`，可自动完成下方第 2~7 节
+> （下载模型 → 生成 override → 构建启动 → 初始化 → 端到端验证）并输出 PASS/FAIL 汇总。
+> 完整验证：`bash scripts/verify-linux-deploy.sh`；低配关 Rerank：`RERANK=0 bash scripts/verify-linux-deploy.sh`。
+
 ## 1. 放置代码（两个仓库必须为兄弟目录，目录名固定）
 
 `docker-compose.deploy.yml` 的 frontend 构建上下文是 `../EnterpriseKBWeb`，
@@ -25,7 +29,7 @@ df -h                     # 磁盘预留 >= 20G（模型 + 两个镜像 + 数据
 mkdir -p /opt/kb && cd /opt/kb
 
 # 方式 A：git clone（推荐）
-git clone <后端仓库地址> EnterpriseKB
+git clone https://github.com/CpxLincen/EnterpriseKB_API.git EnterpriseKB
 git clone <前端仓库地址> EnterpriseKBWeb
 
 # 方式 B：scp 上传（无 git 时），保证解压后目录名为 EnterpriseKB / EnterpriseKBWeb
@@ -117,16 +121,21 @@ docker compose -f docker-compose.deploy.yml -f docker-compose.deploy.rerank.yml 
 
 预期三个服务均 `running` / `healthy`：`db`（healthy）、`backend`、`frontend`。
 
-## 6. 初始化管理员、授权、导入示例文档
+## 6. 初始化管理员、导入示例文档、授权
 
 ```bash
 cd /opt/kb/EnterpriseKB
 C="docker compose -f docker-compose.deploy.yml -f docker-compose.deploy.rerank.yml"
 
 $C exec backend python -m app.cli create-user admin --role admin
+# 后端镜像只含 app/ 与 config/，examples/ 需先复制进容器
+$C cp examples/employee-handbook.md backend:/tmp/employee-handbook.md
+$C exec backend python -m app.cli ingest /tmp/employee-handbook.md --knowledge-base hr
 $C exec backend python -m app.cli grant admin --knowledge-base hr --write
-$C exec backend python -m app.cli ingest examples/employee-handbook.md --knowledge-base hr
 ```
+
+> 顺序说明：`ingest` 会自动创建知识库 `hr`；`grant` 要求知识库已存在，
+> 因此放在 `ingest` 之后执行。
 
 ## 7. 端到端验证
 
