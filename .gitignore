@@ -10,3 +10,5 @@ data/
 *.log
 logs/
 /models/
+# Microsoft Office 临时锁文件（打开文档时生成，~$ 前缀）
+~$*

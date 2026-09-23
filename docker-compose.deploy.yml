@@ -25,6 +25,7 @@ services:
       dockerfile: Dockerfile
       args:
         INSTALL_RERANK: ${INSTALL_RERANK:-true}
+        INSTALL_OCR: ${INSTALL_OCR:-false}
     environment:
       DATABASE_URL: postgresql+psycopg://enterprise_kb:${POSTGRES_PASSWORD:-enterprise_kb}@db:5432/enterprise_kb
       QWEN_API_KEY: ${QWEN_API_KEY}

@@ -1,10 +1,12 @@
 # 依赖锁定文件（2026-09-19 由当前 .venv 实测生成，经 pytest 50 例 + 冒烟 + compileall 验证）。
 # 用途：可复现构建（CI / 部署 / 队友环境）。仅锁直接依赖；运行时依赖不含 rerank/OCR 可选重依赖。
 #
-# 注意（问题 #19 的「兼容矩阵」部分仍待办）：
-#   已确认 rapidocr-onnxruntime>=1.4.0 放宽为 numpy<3.0，可与 numpy 2.2.6 共存；
-#   但安装实测（onnxruntime/opencv-python/shapely/pyclipper/rapidocr-onnxruntime）
-#   因当前网络受限未完成，需在具备 PyPI 网络的环境跑通 OCR 冒烟后再补锁精确版本。
+# 注意（问题 #19 的「兼容矩阵」进度，2026-09-23 更新）：
+#   已实测安装 rapidocr-onnxruntime>=1.4.0：numpy 2.x 兼容 OK；但发现其依赖的
+#   opencv-python 需要 X11/GL 系统库（libxcb.so.1 / libGL.so.1 等），slim 镜像缺失。
+#   Dockerfile 已新增 INSTALL_OCR 分支通过 apt 补齐系统库（见 requirements-ocr.txt 注释）。
+#   剩余：OCR 冒烟通过后，把 onnxruntime / opencv-python / shapely / pyclipper /
+#   rapidocr-onnxruntime 的精确版本回填到本文件（待 pip freeze 输出）。
 fastapi==0.141.1
 uvicorn[standard]==0.52.4
 typer==0.27.1

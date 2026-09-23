@@ -20,5 +20,5 @@ pymupdf>=1.24,<2.0
 # Rerank（BGE 交叉编码器重排）为可选重依赖：会带入 torch，体积较大，
 # 不在基础运行时依赖内。需要启用 rerank 时安装 requirements-rerank.txt。
 # 扫描 PDF OCR（可选；未安装时扫描 PDF 会提示无法提取文字）。
-# 需 >=1.4.0：该版本起放宽 numpy 约束为 numpy<3.0，可与 numpy 2.x / torch 2.x 共存。
-# rapidocr-onnxruntime>=1.4.0,<2.0
+# 独立文件 requirements-ocr.txt；rapidocr-onnxruntime 依赖 opencv-python（需 X11/GL 系统库，
+# Docker 部署由 Dockerfile 的 INSTALL_OCR 分支 apt 安装，见 requirements-ocr.txt 注释）。
