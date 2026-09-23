@@ -161,11 +161,14 @@ def _positive_int_env(name: str) -> int | None:
 
 
 def _env_bool(name: str) -> bool | None:
-    """读取布尔型环境变量；未设置返回 None（表示「未覆盖，用默认/配置文件」）。"""
+    """读取布尔型环境变量；未设置或为空返回 None（表示「未覆盖，用默认/配置文件」）。"""
     raw = os.getenv(name)
     if raw is None:
         return None
-    return raw.strip().lower() in {"1", "true", "yes", "on"}
+    value = raw.strip().lower()
+    if not value:
+        return None
+    return value in {"1", "true", "yes", "on"}
 
 
 def conversation_archive_days() -> int | None:

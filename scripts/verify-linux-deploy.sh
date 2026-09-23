@@ -185,6 +185,7 @@ fi
 
 if [ "$RERANK" = "1" ]; then
   set_env INSTALL_RERANK true
+  set_env RERANK_ENABLED true
 else
   set_env INSTALL_RERANK false
   set_env RERANK_ENABLED false
@@ -259,8 +260,11 @@ $COMPOSE cp examples/employee-handbook.md backend:/tmp/employee-handbook.md >/de
 INGEST_OUT=$($COMPOSE exec -T backend env PYTHONUTF8=1 python -m app.cli ingest /tmp/employee-handbook.md --knowledge-base "$KB_NAME" 2>&1)
 INGEST_RC=$?
 echo "$INGEST_OUT" | tail -4
-if [ "$INGEST_RC" = "0" ] && echo "$INGEST_OUT" | grep -q 'Imported'; then
-  ok "ingest 成功：$(echo "$INGEST_OUT" | grep -o 'Imported [0-9]* chunks[^.]*' | head -1)"
+INGEST_N=$(echo "$INGEST_OUT" | grep -oE 'Imported [0-9]+ chunks' | grep -oE '[0-9]+' | head -1)
+if [ "$INGEST_RC" = "0" ] && [ -n "$INGEST_N" ] && [ "$INGEST_N" -gt 0 ]; then
+  ok "ingest 成功：Imported ${INGEST_N} chunks"
+elif [ "$INGEST_RC" = "0" ] && [ "$INGEST_N" = "0" ]; then
+  warn "ingest 返回 0 chunks：文档内容已存在（SHA-256 去重命中）或为空文件，未新增块"
 else
   fail "ingest 失败（检查 Embedding API / 外网）"
 fi
@@ -301,11 +305,16 @@ fi
 if [ "$RERANK" = "1" ]; then
   CFG_OUT=$($COMPOSE exec -T backend env PYTHONUTF8=1 python -c "from app.core.config import retrieval_config as r; print(r().rerank_model, r().rerank_enabled)" 2>/dev/null || true)
   info "retrieval_config: ${CFG_OUT}"
-  DEGRADE_N=$($COMPOSE logs --no-color backend 2>/dev/null | grep -c 'Rerank 不可用' || true)
-  if [ "${DEGRADE_N:-0}" -gt 0 ]; then
-    fail "检测到 Rerank 降级（$DEGRADE_N 条 'Rerank 不可用' warning）：模型未挂上或加载失败"
+  RERANK_ON=$(echo "$CFG_OUT" | awk '{print $NF}')
+  if [ "$RERANK_ON" != "True" ]; then
+    fail "RERANK_ENABLED 未生效（retrieval_config 显示 '$RERANK_ON'，期望 'True'）。请确认 .env 的 RERANK_ENABLED=true 并 force-recreate backend"
   else
-    ok "未检测到 Rerank 降级，Rerank 生效"
+    DEGRADE_N=$($COMPOSE logs --no-color backend 2>/dev/null | grep -c 'Rerank 不可用' || true)
+    if [ "${DEGRADE_N:-0}" -gt 0 ]; then
+      fail "检测到 Rerank 降级（$DEGRADE_N 条 'Rerank 不可用' warning）：模型未挂上或加载失败"
+    else
+      ok "Rerank 已启用且未降级（${CFG_OUT}）"
+    fi
   fi
 else
   info "RERANK=0：跳过 Rerank 判定（混合检索 dense+BM25+RRF）"

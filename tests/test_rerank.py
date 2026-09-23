@@ -40,3 +40,15 @@ def test_retrieval_config_rerank_model_env_override(monkeypatch):
     # 置空则回落到 models.yaml 的默认模型 ID
     monkeypatch.setenv("RERANK_MODEL_PATH", "")
     assert retrieval_config().rerank_model == "BAAI/bge-reranker-v2-m3"
+
+
+def test_retrieval_config_rerank_enabled_env_fallback(monkeypatch):
+    """RERANK_ENABLED 未设置或为空时，回落到 models.yaml 的 rerank.enabled（true）。"""
+    monkeypatch.delenv("RERANK_ENABLED", raising=False)
+    assert retrieval_config().rerank_enabled is True
+    # Docker compose 会在 .env 为空时注入空字符串，空值应视为「未覆盖」，而非 False
+    monkeypatch.setenv("RERANK_ENABLED", "")
+    assert retrieval_config().rerank_enabled is True
+    # 显式 false 才关闭
+    monkeypatch.setenv("RERANK_ENABLED", "false")
+    assert retrieval_config().rerank_enabled is False
