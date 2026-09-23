@@ -19,13 +19,9 @@ RUN pip install --no-cache-dir -r requirements.txt \
          pip install --no-cache-dir -r requirements-rerank.txt; \
        fi \
     && if [ "$INSTALL_OCR" = "true" ]; then \
-         apt-get update \
-         && apt-get install -y --no-install-recommends \
-              libgl1 libglib2.0-0 libsm6 libxext6 libxrender1 libfontconfig1 \
-              libxcb1 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 \
-              libxcb-shape0 libxcb-xinerama0 libxcb-xkb1 libxkbcommon0 libxkbcommon-x11-0 \
-         && pip install --no-cache-dir -r requirements-ocr.txt \
-         && rm -rf /var/lib/apt/lists/*; \
+         pip install --no-cache-dir -r requirements-ocr.txt \
+         && pip uninstall -y opencv-python \
+         && pip install --no-cache-dir opencv-python-headless==5.0.0.93; \
        fi
 
 # 复制应用代码与模型配置（.env 不入镜像，密钥通过运行时环境变量注入）

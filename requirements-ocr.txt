@@ -1,11 +1,14 @@
-# 可选重依赖：扫描 PDF OCR（RapidOCR，ONNX Runtime 推理）。
+# 可选重依赖：扫描 PDF OCR（RapidOCR，ONNX Runtime 推理）。版本为 2026-09-23 线上实测。
 #
-# 说明：rapidocr-onnxruntime 依赖 opencv-python（完整版，含 GUI 绑定），
-#       opencv-python 需要 X11/GL 系统库（libxcb.so.1 / libGL.so.1 等），
-#       python:3.10-slim 镜像默认不含这些库，直接安装会 ImportError。
-#       Docker 部署统一由 Dockerfile 的 INSTALL_OCR 分支用 apt 补齐系统库；
-#       本地裸装时需自行 apt 补齐（或临时用 opencv-python-headless 替代验证，
-#       但 headless 与 rapidocr 的 opencv-python 依赖存在双 cv2 冲突，生产不走该方案）。
-# 安装：Docker 构建设 INSTALL_OCR=true；本地：pip install -r requirements-ocr.txt。
+# 依赖说明：rapidocr-onnxruntime 声明依赖 opencv-python（完整版，含 GUI 绑定），
+#   其需要 X11/GL 系统库（libxcb.so.1 / libGL.so.1 等），python:3.10-slim 不含，直接装会 ImportError。
+#   实测：用 opencv-python-headless 替代完整版后，OCR 正常识别中文、且无需任何系统库。
+#   安装因此分两步（见 Dockerfile 的 INSTALL_OCR 分支）：
+#     1) pip install -r requirements-ocr.txt                 # 会带入完整版 opencv-python
+#     2) pip uninstall -y opencv-python && pip install opencv-python-headless==5.0.0.93
+# 本地安装：先跑本文件，再执行上面第 2 步。
 # 未安装时扫描 PDF 会提示无法提取文字（代码层延迟导入 + 三态诊断）。
-rapidocr-onnxruntime>=1.4.0,<2.0
+rapidocr-onnxruntime==1.4.4
+onnxruntime==1.23.2
+pyclipper==1.4.0
+shapely==2.1.2
