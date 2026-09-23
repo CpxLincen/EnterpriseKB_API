@@ -91,7 +91,7 @@ info "1/10 前置检查"
 command -v docker >/dev/null 2>&1 || die "未找到 docker"
 docker compose version >/dev/null 2>&1 || die "需要 docker compose v2（插件）。请运行 'docker compose version' 确认"
 [ -f "$REPO_DIR/docker-compose.deploy.yml" ] || die "缺少 docker-compose.deploy.yml"
-[ -d "$WEB_DIR" ] || die "未找到前端目录 $WEB_DIR（两个仓库必须为同名兄弟目录，见 docs/方案一-Linux端到端部署验证.md）"
+  [ -d "$WEB_DIR" ] || die "未找到前端目录 $WEB_DIR（两个仓库必须为同名兄弟目录，见 项目技术文档.md「方案一：Linux 端到端部署验证」）"
 ok "docker / compose v2 / 目录结构"
 
 # ---------- 2. 资源自检 ----------
@@ -152,7 +152,7 @@ if [ "$ADD_SWAP" = "1" ]; then
         grep -q "$SWAP_FILE" /etc/fstab || printf '%s none swap sw 0 0\n' "$SWAP_FILE" >> /etc/fstab
         ok "swap 已启用（$SWAP_FILE）"
       else
-        warn "swap 创建失败；请按 docs/方案一 10.2 节手动加 swap"
+    warn "swap 创建失败；请按 项目技术文档.md「方案一」10.2 节手动加 swap"
       fi
     fi
   else
