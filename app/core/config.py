@@ -186,6 +186,27 @@ def audit_retention_days() -> int | None:
     return _positive_int_env("AUDIT_RETENTION_DAYS")
 
 
+def scheduler_enabled() -> bool:
+    """是否启用应用内定时任务（APScheduler）；默认 True，多 worker 部署时设 false 改用系统 cron。"""
+    return _env_bool("SCHEDULER_ENABLED") is not False
+
+
+def scheduler_timezone() -> str | None:
+    """定时任务时区（IANA 名称）；默认 Asia/Shanghai，留空用系统本地时区。"""
+    raw = os.getenv("SCHEDULER_TIMEZONE", "Asia/Shanghai").strip()
+    return raw or None
+
+
+def retention_cron() -> str:
+    """会话保留任务的 cron 表达式（默认每天 03:00）。"""
+    return os.getenv("RETENTION_CRON", "0 3 * * *").strip() or "0 3 * * *"
+
+
+def audit_retention_cron() -> str:
+    """审计日志保留任务的 cron 表达式（默认每天 03:00）。"""
+    return os.getenv("AUDIT_RETENTION_CRON", "0 3 * * *").strip() or "0 3 * * *"
+
+
 def _raw_config() -> dict:
     """读取并解析 config/models.yaml，返回原始配置字典。"""
     with (ROOT / "config" / "models.yaml").open("r", encoding="utf-8") as f:

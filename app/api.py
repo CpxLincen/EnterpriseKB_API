@@ -17,6 +17,7 @@ from app.routers import api_router
 from app.routers.middleware import auth_middleware
 from app.services.audit import apply_audit_retention, log_event
 from app.services.conversation import apply_retention
+from app.services.scheduler import start_scheduler, stop_scheduler
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,12 @@ async def lifespan(app: FastAPI):
             )
     except Exception:  # noqa: BLE001 - 保留策略失败不能阻断启动
         logger.warning("审计日志保留策略执行失败（不影响启动）", exc_info=True)
-    yield
+    # 启动应用内定时调度（会话 / 审计保留策略周期执行；多 worker 时建议关闭改用 cron）
+    scheduler = start_scheduler()
+    try:
+        yield
+    finally:
+        stop_scheduler(scheduler)
 
 
 # 创建 FastAPI 应用实例（用 lifespan 替代已弃用的 @app.on_event("startup")）
