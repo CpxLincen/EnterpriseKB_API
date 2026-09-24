@@ -1,0 +1,445 @@
+{
+  "modes": {
+    "dense": {
+      "summary": {
+        "total": 3,
+        "answered": 3,
+        "no_answer": 0,
+        "retrieval_recall": {
+          "n": 3,
+          "hit": 3,
+          "rate": 1.0
+        },
+        "fact_accuracy": {
+          "n": 3,
+          "hit": 3,
+          "rate": 1.0
+        },
+        "no_answer_accuracy": {
+          "n": 0,
+          "correct": 0,
+          "rate": null
+        },
+        "judge_accuracy": null,
+        "chunk_retrieval": {
+          "n": 3,
+          "recall_at_5": 1.0,
+          "hit_at_1": 1.0,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "mrr": 1.0
+        },
+        "difficulty_breakdown": {
+          "L1": {
+            "n": 2,
+            "hit": 2,
+            "rate": 1.0
+          },
+          "L2": {
+            "n": 1,
+            "hit": 1,
+            "rate": 1.0
+          }
+        }
+      },
+      "cases": [
+        {
+          "id": "tbl-001",
+          "category": "factual",
+          "difficulty": "L1",
+          "knowledge_base": "table",
+          "question": "100万以上的合同由谁审批？",
+          "answer": "100万以上的合同由总经理审批 [1]。",
+          "citations": [
+            {
+              "chunk_id": 1094,
+              "filename": "审批权限表.xlsx",
+              "page_number": null,
+              "chunk_index": 0,
+              "excerpt": "【审批权限】\n| 类别 | 档次 | 审批人 |\n| --- | --- | --- |\n| 类别：合同 | 档次：100万以下 | 审批人：部门负责人 |\n| 类别：合同 | 档次：100万以上 | 审批人：总经理 |\n| 类别：采购 | 档次：全部 | 审批人：分管领导 |\n| 类别：报销 | 档次：1万以下 | 审批人：财务经理 |",
+              "knowledge_base": "table"
+            }
+          ],
+          "is_no_answer": false,
+          "retrieval_hit": true,
+          "expected_sources": [
+            "审批权限表.xlsx"
+          ],
+          "fact_hit": true,
+          "fact_matched": [
+            "总经理"
+          ],
+          "fact_missing": [],
+          "no_answer_correct": null,
+          "expected_chunk": "100万以上",
+          "chunk_hit": true,
+          "chunk_rank": 1,
+          "judge_score": null,
+          "judge_reason": null
+        },
+        {
+          "id": "tbl-002",
+          "category": "factual",
+          "difficulty": "L1",
+          "knowledge_base": "table",
+          "question": "报销金额1万以下由谁审批？",
+          "answer": "报销金额1万以下由财务经理审批 [4]。",
+          "citations": [
+            {
+              "chunk_id": 1094,
+              "filename": "审批权限表.xlsx",
+              "page_number": null,
+              "chunk_index": 0,
+              "excerpt": "【审批权限】\n| 类别 | 档次 | 审批人 |\n| --- | --- | --- |\n| 类别：合同 | 档次：100万以下 | 审批人：部门负责人 |\n| 类别：合同 | 档次：100万以上 | 审批人：总经理 |\n| 类别：采购 | 档次：全部 | 审批人：分管领导 |\n| 类别：报销 | 档次：1万以下 | 审批人：财务经理 |",
+              "knowledge_base": "table"
+            }
+          ],
+          "is_no_answer": false,
+          "retrieval_hit": true,
+          "expected_sources": [
+            "审批权限表.xlsx"
+          ],
+          "fact_hit": true,
+          "fact_matched": [
+            "财务经理"
+          ],
+          "fact_missing": [],
+          "no_answer_correct": null,
+          "expected_chunk": "财务经理",
+          "chunk_hit": true,
+          "chunk_rank": 1,
+          "judge_score": null,
+          "judge_reason": null
+        },
+        {
+          "id": "tbl-003",
+          "category": "factual",
+          "difficulty": "L2",
+          "knowledge_base": "table",
+          "question": "采购事项全部金额档位由谁审批？",
+          "answer": "采购事项全部金额档位由分管领导审批 [3]。",
+          "citations": [
+            {
+              "chunk_id": 1094,
+              "filename": "审批权限表.xlsx",
+              "page_number": null,
+              "chunk_index": 0,
+              "excerpt": "【审批权限】\n| 类别 | 档次 | 审批人 |\n| --- | --- | --- |\n| 类别：合同 | 档次：100万以下 | 审批人：部门负责人 |\n| 类别：合同 | 档次：100万以上 | 审批人：总经理 |\n| 类别：采购 | 档次：全部 | 审批人：分管领导 |\n| 类别：报销 | 档次：1万以下 | 审批人：财务经理 |",
+              "knowledge_base": "table"
+            }
+          ],
+          "is_no_answer": false,
+          "retrieval_hit": true,
+          "expected_sources": [
+            "审批权限表.xlsx"
+          ],
+          "fact_hit": true,
+          "fact_matched": [
+            "分管领导"
+          ],
+          "fact_missing": [],
+          "no_answer_correct": null,
+          "expected_chunk": "分管领导",
+          "chunk_hit": true,
+          "chunk_rank": 1,
+          "judge_score": null,
+          "judge_reason": null
+        }
+      ]
+    },
+    "hybrid": {
+      "summary": {
+        "total": 3,
+        "answered": 3,
+        "no_answer": 0,
+        "retrieval_recall": {
+          "n": 3,
+          "hit": 3,
+          "rate": 1.0
+        },
+        "fact_accuracy": {
+          "n": 3,
+          "hit": 3,
+          "rate": 1.0
+        },
+        "no_answer_accuracy": {
+          "n": 0,
+          "correct": 0,
+          "rate": null
+        },
+        "judge_accuracy": null,
+        "chunk_retrieval": {
+          "n": 3,
+          "recall_at_5": 1.0,
+          "hit_at_1": 1.0,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "mrr": 1.0
+        },
+        "difficulty_breakdown": {
+          "L1": {
+            "n": 2,
+            "hit": 2,
+            "rate": 1.0
+          },
+          "L2": {
+            "n": 1,
+            "hit": 1,
+            "rate": 1.0
+          }
+        }
+      },
+      "cases": [
+        {
+          "id": "tbl-001",
+          "category": "factual",
+          "difficulty": "L1",
+          "knowledge_base": "table",
+          "question": "100万以上的合同由谁审批？",
+          "answer": "100万以上的合同由总经理审批 [2]。",
+          "citations": [
+            {
+              "chunk_id": 1094,
+              "filename": "审批权限表.xlsx",
+              "page_number": null,
+              "chunk_index": 0,
+              "excerpt": "【审批权限】\n| 类别 | 档次 | 审批人 |\n| --- | --- | --- |\n| 类别：合同 | 档次：100万以下 | 审批人：部门负责人 |\n| 类别：合同 | 档次：100万以上 | 审批人：总经理 |\n| 类别：采购 | 档次：全部 | 审批人：分管领导 |\n| 类别：报销 | 档次：1万以下 | 审批人：财务经理 |",
+              "knowledge_base": "table"
+            }
+          ],
+          "is_no_answer": false,
+          "retrieval_hit": true,
+          "expected_sources": [
+            "审批权限表.xlsx"
+          ],
+          "fact_hit": true,
+          "fact_matched": [
+            "总经理"
+          ],
+          "fact_missing": [],
+          "no_answer_correct": null,
+          "expected_chunk": "100万以上",
+          "chunk_hit": true,
+          "chunk_rank": 1,
+          "judge_score": null,
+          "judge_reason": null
+        },
+        {
+          "id": "tbl-002",
+          "category": "factual",
+          "difficulty": "L1",
+          "knowledge_base": "table",
+          "question": "报销金额1万以下由谁审批？",
+          "answer": "报销金额1万以下由财务经理审批 [4]。",
+          "citations": [
+            {
+              "chunk_id": 1094,
+              "filename": "审批权限表.xlsx",
+              "page_number": null,
+              "chunk_index": 0,
+              "excerpt": "【审批权限】\n| 类别 | 档次 | 审批人 |\n| --- | --- | --- |\n| 类别：合同 | 档次：100万以下 | 审批人：部门负责人 |\n| 类别：合同 | 档次：100万以上 | 审批人：总经理 |\n| 类别：采购 | 档次：全部 | 审批人：分管领导 |\n| 类别：报销 | 档次：1万以下 | 审批人：财务经理 |",
+              "knowledge_base": "table"
+            }
+          ],
+          "is_no_answer": false,
+          "retrieval_hit": true,
+          "expected_sources": [
+            "审批权限表.xlsx"
+          ],
+          "fact_hit": true,
+          "fact_matched": [
+            "财务经理"
+          ],
+          "fact_missing": [],
+          "no_answer_correct": null,
+          "expected_chunk": "财务经理",
+          "chunk_hit": true,
+          "chunk_rank": 1,
+          "judge_score": null,
+          "judge_reason": null
+        },
+        {
+          "id": "tbl-003",
+          "category": "factual",
+          "difficulty": "L2",
+          "knowledge_base": "table",
+          "question": "采购事项全部金额档位由谁审批？",
+          "answer": "采购事项全部金额档位由分管领导审批 [3]。",
+          "citations": [
+            {
+              "chunk_id": 1094,
+              "filename": "审批权限表.xlsx",
+              "page_number": null,
+              "chunk_index": 0,
+              "excerpt": "【审批权限】\n| 类别 | 档次 | 审批人 |\n| --- | --- | --- |\n| 类别：合同 | 档次：100万以下 | 审批人：部门负责人 |\n| 类别：合同 | 档次：100万以上 | 审批人：总经理 |\n| 类别：采购 | 档次：全部 | 审批人：分管领导 |\n| 类别：报销 | 档次：1万以下 | 审批人：财务经理 |",
+              "knowledge_base": "table"
+            }
+          ],
+          "is_no_answer": false,
+          "retrieval_hit": true,
+          "expected_sources": [
+            "审批权限表.xlsx"
+          ],
+          "fact_hit": true,
+          "fact_matched": [
+            "分管领导"
+          ],
+          "fact_missing": [],
+          "no_answer_correct": null,
+          "expected_chunk": "分管领导",
+          "chunk_hit": true,
+          "chunk_rank": 1,
+          "judge_score": null,
+          "judge_reason": null
+        }
+      ]
+    },
+    "rerank": {
+      "summary": {
+        "total": 3,
+        "answered": 3,
+        "no_answer": 0,
+        "retrieval_recall": {
+          "n": 3,
+          "hit": 3,
+          "rate": 1.0
+        },
+        "fact_accuracy": {
+          "n": 3,
+          "hit": 3,
+          "rate": 1.0
+        },
+        "no_answer_accuracy": {
+          "n": 0,
+          "correct": 0,
+          "rate": null
+        },
+        "judge_accuracy": null,
+        "chunk_retrieval": {
+          "n": 3,
+          "recall_at_5": 1.0,
+          "hit_at_1": 1.0,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "mrr": 1.0
+        },
+        "difficulty_breakdown": {
+          "L1": {
+            "n": 2,
+            "hit": 2,
+            "rate": 1.0
+          },
+          "L2": {
+            "n": 1,
+            "hit": 1,
+            "rate": 1.0
+          }
+        }
+      },
+      "cases": [
+        {
+          "id": "tbl-001",
+          "category": "factual",
+          "difficulty": "L1",
+          "knowledge_base": "table",
+          "question": "100万以上的合同由谁审批？",
+          "answer": "100万以上的合同由总经理审批 [2]。",
+          "citations": [
+            {
+              "chunk_id": 1094,
+              "filename": "审批权限表.xlsx",
+              "page_number": null,
+              "chunk_index": 0,
+              "excerpt": "【审批权限】\n| 类别 | 档次 | 审批人 |\n| --- | --- | --- |\n| 类别：合同 | 档次：100万以下 | 审批人：部门负责人 |\n| 类别：合同 | 档次：100万以上 | 审批人：总经理 |\n| 类别：采购 | 档次：全部 | 审批人：分管领导 |\n| 类别：报销 | 档次：1万以下 | 审批人：财务经理 |",
+              "knowledge_base": "table"
+            }
+          ],
+          "is_no_answer": false,
+          "retrieval_hit": true,
+          "expected_sources": [
+            "审批权限表.xlsx"
+          ],
+          "fact_hit": true,
+          "fact_matched": [
+            "总经理"
+          ],
+          "fact_missing": [],
+          "no_answer_correct": null,
+          "expected_chunk": "100万以上",
+          "chunk_hit": true,
+          "chunk_rank": 1,
+          "judge_score": null,
+          "judge_reason": null
+        },
+        {
+          "id": "tbl-002",
+          "category": "factual",
+          "difficulty": "L1",
+          "knowledge_base": "table",
+          "question": "报销金额1万以下由谁审批？",
+          "answer": "报销金额1万以下由财务经理审批 [4]。",
+          "citations": [
+            {
+              "chunk_id": 1094,
+              "filename": "审批权限表.xlsx",
+              "page_number": null,
+              "chunk_index": 0,
+              "excerpt": "【审批权限】\n| 类别 | 档次 | 审批人 |\n| --- | --- | --- |\n| 类别：合同 | 档次：100万以下 | 审批人：部门负责人 |\n| 类别：合同 | 档次：100万以上 | 审批人：总经理 |\n| 类别：采购 | 档次：全部 | 审批人：分管领导 |\n| 类别：报销 | 档次：1万以下 | 审批人：财务经理 |",
+              "knowledge_base": "table"
+            }
+          ],
+          "is_no_answer": false,
+          "retrieval_hit": true,
+          "expected_sources": [
+            "审批权限表.xlsx"
+          ],
+          "fact_hit": true,
+          "fact_matched": [
+            "财务经理"
+          ],
+          "fact_missing": [],
+          "no_answer_correct": null,
+          "expected_chunk": "财务经理",
+          "chunk_hit": true,
+          "chunk_rank": 1,
+          "judge_score": null,
+          "judge_reason": null
+        },
+        {
+          "id": "tbl-003",
+          "category": "factual",
+          "difficulty": "L2",
+          "knowledge_base": "table",
+          "question": "采购事项全部金额档位由谁审批？",
+          "answer": "采购事项全部金额档位由分管领导审批 [3]。",
+          "citations": [
+            {
+              "chunk_id": 1094,
+              "filename": "审批权限表.xlsx",
+              "page_number": null,
+              "chunk_index": 0,
+              "excerpt": "【审批权限】\n| 类别 | 档次 | 审批人 |\n| --- | --- | --- |\n| 类别：合同 | 档次：100万以下 | 审批人：部门负责人 |\n| 类别：合同 | 档次：100万以上 | 审批人：总经理 |\n| 类别：采购 | 档次：全部 | 审批人：分管领导 |\n| 类别：报销 | 档次：1万以下 | 审批人：财务经理 |",
+              "knowledge_base": "table"
+            }
+          ],
+          "is_no_answer": false,
+          "retrieval_hit": true,
+          "expected_sources": [
+            "审批权限表.xlsx"
+          ],
+          "fact_hit": true,
+          "fact_matched": [
+            "分管领导"
+          ],
+          "fact_missing": [],
+          "no_answer_correct": null,
+          "expected_chunk": "分管领导",
+          "chunk_hit": true,
+          "chunk_rank": 1,
+          "judge_score": null,
+          "judge_reason": null
+        }
+      ]
+    }
+  }
+}

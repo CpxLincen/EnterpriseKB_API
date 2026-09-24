@@ -273,9 +273,9 @@ app/
 
 ## 8. 下一步建议
 
-1. 把当前未提交的多轮改动整理入库（git commit）；
+1. 多轮改动已按主题提交入库（工作区干净）；后续按主题继续整理 commit；
 2. 防幻觉门禁模糊带（`neg-001` 与弱事实题重排分重叠），需更细信号或可接受误判率；
 3. 评测集替换 / 补充真实用户问题（负面样本偏少）；
-4. 文档解析：已支持 DOCX / XLSX / PPTX / PDF 表格结构化（含无边框 2 列检测、合并单元格、跨页续接、多栏阅读顺序）+ HTML / EPUB 正文；表格入库已做列语义增强（`列名：值`）；扫描 PDF OCR 为可选能力（`pip install rapidocr-onnxruntime` 后自动识别）；上传已做 magic bytes 内容嗅探、解析结构化指标进审计、单文档解析内存保护（`MAX_PARSE_BYTES`），并提供 `reingest` / `rebuild` 重建命令；图片/图表结构化、文档版本、增量同步待做；
+4. 文档解析：已支持 DOCX / XLSX / PPTX / PDF 表格结构化（含无边框 2 列检测、合并单元格、跨页续接、多栏阅读顺序）+ HTML / EPUB 正文；表格入库已做列语义增强（`列名：值`）；扫描 PDF OCR 为可选能力（`pip install rapidocr-onnxruntime` 后自动识别，生产镜像 `INSTALL_OCR=true`）；上传已做 magic bytes 内容嗅探、解析结构化指标进审计、单文档解析内存保护（`MAX_PARSE_BYTES`），并提供 `reingest` / `rebuild` / `sync`（增量同步）命令；图片/图表结构化、文档版本待做；
 5. SSO 对真实 IdP 端到端实测；接入只读 MCP 与首个 Skill；
 6. 部署镜像纳入 FlagEmbedding 与重排模型分发（`requirements-rerank.txt` 已拆出，模型 2.3GB 需单独分发）；跟踪 Docker Desktop #531/#532 socket bug。

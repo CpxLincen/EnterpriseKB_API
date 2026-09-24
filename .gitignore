@@ -9,6 +9,8 @@ data/
 .idea/
 *.log
 logs/
+# 审计日志（JSON 行，含敏感操作记录，不入库）
+docs/audit_log.md
 /models/
 # Microsoft Office 临时锁文件（打开文档时生成，~$ 前缀）
 ~$*
