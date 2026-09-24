@@ -1156,6 +1156,51 @@ def _import_pymupdf():
 _ocr_engine = None  # 模块级 OCR 引擎缓存（懒加载，避免重复初始化）
 
 
+def _filter_ocr_margins(
+    items: list[tuple],
+    *,
+    page_height: float,
+    margin_ratio: float = 0.08,
+) -> list[tuple]:
+    """过滤 OCR 结果中的页眉/页脚/边缘水印噪声（问题 #8）。
+
+    items: [(box, text)]，box 为 rapidocr 返回的四点坐标 [[x,y], ...]（像素坐标）。
+    以文本中心 y 判断：落在页面顶部或底部 margin_ratio 比例区域内的行视为
+    页眉/页脚/边缘水印并剔除；page_height 为页面渲染高度（像素）。
+    """
+    if not items or page_height <= 0:
+        return items
+    top_band = page_height * margin_ratio
+    bottom_band = page_height * (1.0 - margin_ratio)
+    kept: list[tuple] = []
+    for box, text in items:
+        ys = [p[1] for p in box]
+        center_y = (min(ys) + max(ys)) / 2.0
+        if center_y < top_band or center_y > bottom_band:
+            continue
+        kept.append((box, text))
+    return kept
+
+
+def _ocr_reading_order(items: list[tuple]) -> list[tuple]:
+    """按阅读顺序重排 OCR 检测结果：自上而下、同行自左而右（问题 #8）。
+
+    items: [(box, text)]，box 为四点坐标 [[x,y], ...]。
+    rapidocr 为行级检测框，故按 (顶部 y, 左边缘 x) 二元组排序即可还原
+    单栏扫描页的阅读顺序（多栏扫描件留待后续）。
+    """
+    if not items:
+        return []
+
+    def _top(box) -> float:
+        return min(p[1] for p in box)
+
+    def _left(box) -> float:
+        return min(p[0] for p in box)
+
+    return sorted(items, key=lambda it: (_top(it[0]), _left(it[0])))
+
+
 def _ocr_page(page) -> str | None:
     """对已打开的 PyMuPDF 页面做 OCR（可选能力，依赖 rapidocr-onnxruntime）。
 
@@ -1192,8 +1237,23 @@ def _ocr_page(page) -> str | None:
     if not result:
         logger.debug("OCR 空结果：未识别到文字")
         return None
-    lines = [str(item[1]).strip() for item in result if item and item[1]]
-    text = normalize_text("\n".join(lines)).strip()
+    items = []
+    for item in result:
+        if not item or not item[1]:
+            continue
+        line = str(item[1]).strip()
+        if line:
+            items.append((item[0], line))
+    if not items:
+        logger.debug("OCR 空结果：识别文本为空")
+        return None
+    # 后处理：先剔除页眉/页脚/边缘水印，再按坐标还原阅读顺序（问题 #8）
+    items = _filter_ocr_margins(items, page_height=pix.height)
+    items = _ocr_reading_order(items)
+    if not items:
+        logger.debug("OCR 空结果：过滤后无有效文字")
+        return None
+    text = normalize_text("\n".join(line for _, line in items)).strip()
     if not text:
         logger.debug("OCR 空结果：识别文本为空")
         return None

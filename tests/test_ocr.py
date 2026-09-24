@@ -1,4 +1,4 @@
-"""#16 OCR 三态诊断：未装依赖 / 识别异常 / 空结果 分别写 debug 日志。"""
+"""#16 OCR 三态诊断 + #8 OCR 后处理（阅读顺序还原 / 页眉页脚过滤）。"""
 
 from __future__ import annotations
 
@@ -55,11 +55,48 @@ def test_ocr_empty_result(caplog, monkeypatch):
 
 def test_ocr_ok(monkeypatch):
     pytest.importorskip("numpy")  # 该分支在 numpy 之后执行，需 numpy 可用
+
     class _Ok:
         def __call__(self, image):  # noqa: D102
-            return ([("b", "你好"), ("b", "世界")], None)
+            # box 为四点坐标 [[x,y],...]；故意乱序，验证按坐标还原阅读顺序。
+            # 注意 y 需落在页面中部（dpi=200 渲染后页面高约 278px），避免被页眉/页脚过滤误删。
+            return (
+                [
+                    ([[10, 140], [100, 140], [100, 152], [10, 152]], "世界"),
+                    ([[10, 100], [100, 100], [100, 112], [10, 112]], "你好"),
+                ],
+                None,
+            )
 
     monkeypatch.setattr(ingestion, "_ocr_engine", _Ok())
     doc, page = _make_page()
     assert ingestion._ocr_page(page) == "你好\n世界"
     doc.close()
+
+
+def test_ocr_reading_order():
+    """按 (顶部 y, 左边缘 x) 重排：先上下、再左右。"""
+    items = [
+        ([[0, 50], [10, 50], [10, 60], [0, 60]], "B"),
+        ([[30, 10], [40, 10], [40, 20], [30, 20]], "C"),
+        ([[0, 10], [10, 10], [10, 20], [0, 20]], "A"),
+    ]
+    ordered = ingestion._ocr_reading_order(items)
+    assert [t for _, t in ordered] == ["A", "C", "B"]
+
+
+def test_ocr_filter_margins():
+    """页眉/页脚/边缘水印被剔除，中部正文保留。"""
+    items = [
+        ([[0, 1], [10, 1], [10, 9], [0, 9]], "页眉"),
+        ([[0, 40], [10, 40], [10, 50], [0, 50]], "正文"),
+        ([[0, 95], [10, 95], [10, 99], [0, 99]], "页脚"),
+    ]
+    kept = ingestion._filter_ocr_margins(items, page_height=100.0)
+    assert [t for _, t in kept] == ["正文"]
+
+
+def test_ocr_filter_margins_disabled_when_no_height():
+    """page_height ≤ 0 时不做过滤（防御分支）。"""
+    items = [([[0, 1], [10, 1], [10, 9], [0, 9]], "文本")]
+    assert ingestion._filter_ocr_margins(items, page_height=0) == items
