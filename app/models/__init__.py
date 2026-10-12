@@ -4,6 +4,7 @@ from app.models.audit import AuditLog
 from app.models.auth import KnowledgeBaseAccess, User
 from app.models.conversation import Conversation, ConversationMessage
 from app.models.knowledge import Document, DocumentChunk, KnowledgeBase
+from app.models.organization import Organization, Personnel, PersonnelRole, Role
 from app.models.review import ReviewItem
 
 __all__ = [
@@ -14,6 +15,10 @@ __all__ = [
     "DocumentChunk",
     "KnowledgeBase",
     "KnowledgeBaseAccess",
+    "Organization",
+    "Personnel",
+    "PersonnelRole",
     "ReviewItem",
+    "Role",
     "User",
 ]

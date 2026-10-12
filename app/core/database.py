@@ -41,6 +41,7 @@ def init_db() -> None:
     from app.models import auth as auth_models  # noqa: F401  # 认证表（users / knowledge_base_access）
     from app.models import conversation as conversation_models  # noqa: F401  # 会话/消息表
     from app.models import knowledge as knowledge_models  # noqa: F401  # 知识库/文档/文本块表
+    from app.models import organization as organization_models  # noqa: F401  # 组织/人员/角色表
     from app.models import review as review_models  # noqa: F401  # 人工复核表
 
     with engine.begin() as connection:
@@ -83,4 +84,10 @@ def init_db() -> None:
         )
         connection.exec_driver_sql(
             "ALTER TABLE documents ADD COLUMN IF NOT EXISTS source_size INTEGER NULL"
+        )
+        # IdP 组织同步以 external_id 作为稳定幂等键。PostgreSQL 唯一索引允许多个 NULL，
+        # 因而既不影响手工创建的组织，也能阻止同一外部组织被重复同步。
+        connection.exec_driver_sql(
+            "CREATE UNIQUE INDEX IF NOT EXISTS ux_organizations_external_id "
+            "ON organizations (external_id)"
         )

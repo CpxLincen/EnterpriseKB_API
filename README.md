@@ -258,24 +258,25 @@ app/
 │   ├── auth.py       #   User / KnowledgeBaseAccess
 │   ├── conversation.py # Conversation / ConversationMessage
 │   ├── audit.py      #   AuditLog
+│   ├── organization.py # Organization / Personnel / Role / PersonnelRole
 │   └── review.py     #   ReviewItem（人工复核）
 ├── schemas/          # Pydantic 请求模型（ChatRequest / LoginRequest / RunEvalRequest）
 ├── services/         # 业务逻辑
 │   ├── providers.py / ingestion.py / retrieval.py / rerank.py / rag.py
-│   ├── audit.py / eval.py / sso.py / memory.py / conversation.py / review.py
+│   ├── audit.py / eval.py / sso.py / memory.py / conversation.py / review.py / directory.py
 └── routers/          # 路由层（APIRouter + Depends）
     ├── deps.py       #   共享依赖（get_current_user / require_kb_access / ensure_kb_access / require_admin）
     ├── middleware.py #   认证中间件
-    └── health.py / auth.py / knowledge.py / chat.py / conversations.py / eval.py / audit.py / review.py
+    └── health.py / auth.py / knowledge.py / chat.py / conversations.py / eval.py / audit.py / review.py / directory.py
 ```
 
 路由在 `app/routers/__init__.py` 的 `api_router` 中聚合，`app/api.py` 只做一次 `include_router(api_router)`。
 
 ## 8. 下一步建议
 
-1. 多轮改动已按主题提交入库（工作区干净）；后续按主题继续整理 commit；
+1. 当前组织目录前后端与本轮审查整改仍在工作区，验证通过后应按主题整理提交；
 2. 防幻觉门禁模糊带（`neg-001` 与弱事实题重排分重叠），需更细信号或可接受误判率；
 3. 评测集替换 / 补充真实用户问题（负面样本偏少）；
 4. 文档解析：已支持 DOCX / XLSX / PPTX / PDF 表格结构化（含无边框 2 列检测、合并单元格、跨页续接、多栏阅读顺序）+ HTML / EPUB 正文；表格入库已做列语义增强（`列名：值`）；扫描 PDF OCR 为可选能力（`pip install rapidocr-onnxruntime` 后自动识别，生产镜像 `INSTALL_OCR=true`）；上传已做 magic bytes 内容嗅探、解析结构化指标进审计、单文档解析内存保护（`MAX_PARSE_BYTES`），并提供 `reingest` / `rebuild` / `sync`（增量同步）命令；图片/图表结构化、文档版本待做；
-5. SSO 对真实 IdP 端到端实测；接入只读 MCP 与首个 Skill；
+5. SSO 下一阶段：IdP claims → 通讯录幂等同步、登录回填 `personnel.user_id`、角色映射、前端 OIDC 登录入口及真实 IdP 端到端实测；
 6. 部署镜像纳入 FlagEmbedding 与重排模型分发（`requirements-rerank.txt` 已拆出，模型 2.3GB 需单独分发）；跟踪 Docker Desktop #531/#532 socket bug。
